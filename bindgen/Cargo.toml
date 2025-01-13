@@ -22,6 +22,8 @@ serde = "1"
 toml = "0.5"
 uniffi_bindgen = "0.25.2"
 clap = { version = "4", features = ["cargo", "std", "derive"] }
+# TODO: Remove the following after upgrading MSRV to 1.78. cargo-platform 0.1.9 does not support 1.77 or older.
+cargo-platform = "=0.1.8"
 
 [[bin]]
 name = "uniffi-bindgen-kotlin-multiplatform"
