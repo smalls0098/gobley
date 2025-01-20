@@ -6,7 +6,7 @@
 
 use uniffi_bindgen::ComponentInterface;
 
-use crate::gen_kotlin_multiplatform::CodeType;
+use super::CodeType;
 
 #[derive(Debug)]
 pub struct CustomCodeType {
@@ -20,8 +20,8 @@ impl CustomCodeType {
 }
 
 impl CodeType for CustomCodeType {
-    fn type_label(&self, _ci: &ComponentInterface) -> String {
-        self.name.clone()
+    fn type_label(&self, ci: &ComponentInterface) -> String {
+        super::KotlinCodeOracle.class_name(ci, &self.name)
     }
 
     fn canonical_name(&self) -> String {

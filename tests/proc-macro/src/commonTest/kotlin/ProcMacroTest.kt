@@ -6,6 +6,8 @@
 
 import io.kotest.assertions.throwables.*
 import io.kotest.matchers.*
+import io.kotest.matchers.collections.beEmpty
+import io.kotest.matchers.types.shouldBeTypeOf
 import proc_macro.*
 import kotlin.test.*
 
@@ -31,8 +33,10 @@ class ProcMacroTest {
     }
 
     @Test
+    @Suppress("VARIABLE_WITH_REDUNDANT_INITIALIZER")
     fun testObject() {
-        val obj = Object.namedCtor(1u)
+        var obj = Object()
+        obj = Object.namedCtor(1u)
         obj.isHeavy() shouldBe MaybeBool.UNCERTAIN
 
         val obj2 = Object()
@@ -46,6 +50,7 @@ class ProcMacroTest {
 
     @Test
     fun testThree() {
+        // just make sure this works / doesn't crash
         Three(Object())
     }
 
@@ -60,6 +65,11 @@ class ProcMacroTest {
     }
 
     @Test
+    fun testJoin() {
+        join(listOf("a", "b", "c"), ":") shouldBe "a:b:c"
+    }
+
+    @Test
     fun testAlwaysFails() {
         shouldThrow<BasicException> {
             alwaysFails()
@@ -68,55 +78,105 @@ class ProcMacroTest {
 
     @Test
     fun testDoStuffWith5() {
-        val obj = Object()
+        val obj = Object.namedCtor(1u)
         obj.doStuff(5u)
     }
 
     @Test
     fun testDoStuffWith0() {
         shouldThrow<FlatException.InvalidInput> {
-            val obj = Object()
+            val obj = Object.namedCtor(1u)
             obj.doStuff(0u)
         }
     }
 
     @Test
+    fun testRecordWithDefaults() {
+        val recordWithDefaults = RecordWithDefaults("Test")
+        recordWithDefaults.noDefaultString shouldBe "Test"
+        recordWithDefaults.boolean shouldBe true
+        recordWithDefaults.integer shouldBe 42
+        recordWithDefaults.floatVar shouldBe 4.2
+        recordWithDefaults.vec shouldBe beEmpty<Boolean>()
+        recordWithDefaults.optVec shouldBe null
+        recordWithDefaults.optInteger shouldBe 42
+
+        doubleWithDefault() shouldBe 42
+    }
+    
+    @Test
+    fun testObjectWithDefaults() {
+        val objWithDefaults = ObjectWithDefaults()
+        objWithDefaults.addToNum() shouldBe 42
+    }
+
+    @Test
     fun testTraitImpl() {
-        val obj = Object()
+        val obj = Object.namedCtor(1u)
         val traitImpl = obj.getTrait(null)
-        obj.getTrait(traitImpl).name() shouldBe "TraitImpl"
-        getTraitNameByRef(traitImpl) shouldBe "TraitImpl"
+        traitImpl.concatStrings("foo", "bar") shouldBe "foobar"
+        obj.getTrait(traitImpl).concatStrings("foo", "bar") shouldBe "foobar"
+        concatStringsByRef(traitImpl, "foo", "bar") shouldBe "foobar"
+
+        val traitImpl2 = obj.getTraitWithForeign(null)
+        traitImpl2.name() shouldBe "RustTraitImpl"
+        obj.getTraitWithForeign(traitImpl2).name() shouldBe "RustTraitImpl"
+    }
+
+    class KtTestCallbackInterface : TestCallbackInterface {
+        override fun doNothing() {}
+
+        override fun add(a: UInt, b: UInt) = a + b
+
+        override fun optional(a: UInt?) = a ?: 0u
+
+        override fun withBytes(rwb: RecordWithBytes) = rwb.someBytes
+
+        override fun tryParseInt(value: String): UInt {
+            if (value == "force-unexpected-error") {
+                // raise an error that's not expected
+                throw RuntimeException(value)
+            }
+            try {
+                return value.toUInt()
+            } catch (e: NumberFormatException) {
+                throw BasicException.InvalidInput()
+            }
+        }
+
+        override fun callbackHandler(h: Object): UInt {
+            val v = h.takeError(BasicException.InvalidInput())
+            return v
+        }
+
+        override fun getOtherCallbackInterface() = KtTestCallbackInterface2()
+    }
+
+    class KtTestCallbackInterface2 : OtherCallbackInterface {
+        override fun multiply(a: UInt, b: UInt) = a * b
     }
 
     @Test
     fun testCallbackInterface() {
-        class KtTestCallbackInterface : TestCallbackInterface {
-            override fun doNothing() {}
-
-            override fun add(a: UInt, b: UInt) = a + b
-
-            override fun optional(a: UInt?) = a ?: 0u
-
-            override fun withBytes(rwb: RecordWithBytes) = rwb.someBytes
-
-            override fun tryParseInt(value: String): UInt {
-                if (value == "force-unexpected-error") {
-                    // raise an error that's not expected
-                    throw RuntimeException(value)
-                }
-                try {
-                    return value.toUInt()
-                } catch (e: NumberFormatException) {
-                    throw BasicException.InvalidInput()
-                }
-            }
-
-            override fun callbackHandler(h: Object): UInt {
-                val v = h.takeError(BasicException.InvalidInput())
-                return v
-            }
-        }
-
         callCallbackInterface(KtTestCallbackInterface())
+    }
+
+    @Test
+    fun testMixedEnum() {
+        getMixedEnum(null) shouldBe MixedEnum.Int(1)
+        getMixedEnum(MixedEnum.None) shouldBe MixedEnum.None
+        getMixedEnum(MixedEnum.String("hello")) shouldBe MixedEnum.String("hello")
+
+        val e = getMixedEnum(null)
+        e.shouldBeTypeOf<MixedEnum.Int>()
+        run {
+            // you can destruct the enum into its bits.
+            val (i) = e
+            i shouldBe 1L
+        }
+        val eb = MixedEnum.Both("hi", 2)
+        val (s, i) = eb
+        s shouldBe "hi"
+        i shouldBe 2L
     }
 }

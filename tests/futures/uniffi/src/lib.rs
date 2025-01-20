@@ -1,8 +1,6 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::{
     future::Future,
@@ -12,6 +10,8 @@ use std::{
     thread,
     time::Duration,
 };
+
+use futures::future::{AbortHandle, Abortable, Aborted};
 
 /// Non-blocking timer future.
 pub struct TimerFuture {
@@ -70,7 +70,8 @@ pub fn greet(who: String) -> String {
 }
 
 /// Async function that is immediately ready.
-#[uniffi::export]
+///
+/// (This one is defined in the UDL to test UDL support)
 pub async fn always_ready() -> bool {
     true
 }
@@ -100,6 +101,12 @@ pub async fn sleep(ms: u16) -> bool {
     TimerFuture::new(Duration::from_millis(ms.into())).await;
 
     true
+}
+
+/// Async function that sleeps with no return type
+#[uniffi::export]
+pub async fn sleep_no_return(ms: u16) {
+    TimerFuture::new(Duration::from_millis(ms.into())).await;
 }
 
 // Our error.
@@ -165,6 +172,20 @@ pub struct Megaphone;
 
 #[uniffi::export]
 impl Megaphone {
+    // the default constructor - many bindings will not support this.
+    #[uniffi::constructor]
+    pub async fn new() -> Arc<Self> {
+        TimerFuture::new(Duration::from_millis(0)).await;
+        Arc::new(Self {})
+    }
+
+    // most should support this.
+    #[uniffi::constructor]
+    pub async fn secondary() -> Arc<Self> {
+        TimerFuture::new(Duration::from_millis(0)).await;
+        Arc::new(Self {})
+    }
+
     /// An async method that yells something after a certain time.
     pub async fn say_after(self: Arc<Self>, ms: u16, who: String) -> String {
         say_after(ms, who).await.to_uppercase()
@@ -209,6 +230,34 @@ pub async fn say_after_with_tokio(ms: u16, who: String) -> String {
     tokio::time::sleep(Duration::from_millis(ms.into())).await;
 
     format!("Hello, {who} (with Tokio)!")
+}
+
+#[derive(uniffi::Object)]
+pub struct FallibleMegaphone;
+
+#[uniffi::export]
+impl FallibleMegaphone {
+    // the default constructor - many bindings will not support this.
+    #[uniffi::constructor]
+    pub async fn new() -> Result<Arc<Self>, MyError> {
+        Err(MyError::Foo)
+    }
+}
+
+pub struct UdlMegaphone;
+
+impl UdlMegaphone {
+    pub async fn new() -> Self {
+        Self {}
+    }
+
+    pub async fn secondary() -> Self {
+        Self {}
+    }
+
+    pub async fn say_after(self: Arc<Self>, ms: u16, who: String) -> String {
+        say_after(ms, who).await.to_uppercase()
+    }
 }
 
 #[derive(uniffi::Record)]
@@ -325,6 +374,128 @@ pub async fn use_shared_resource(options: SharedResourceOptions) -> Result<(), A
 
     sleep(Duration::from_millis(options.release_after_ms.into())).await;
     Ok(())
+}
+
+// Example of an trait with async methods
+#[uniffi::export]
+#[async_trait::async_trait]
+pub trait SayAfterTrait: Send + Sync {
+    async fn say_after(&self, ms: u16, who: String) -> String;
+}
+
+// Example of async trait defined in the UDL file
+#[async_trait::async_trait]
+pub trait SayAfterUdlTrait: Send + Sync {
+    async fn say_after(&self, ms: u16, who: String) -> String;
+}
+
+struct SayAfterImpl1;
+
+struct SayAfterImpl2;
+
+#[async_trait::async_trait]
+impl SayAfterTrait for SayAfterImpl1 {
+    async fn say_after(&self, ms: u16, who: String) -> String {
+        say_after(ms, who).await
+    }
+}
+
+#[async_trait::async_trait]
+impl SayAfterTrait for SayAfterImpl2 {
+    async fn say_after(&self, ms: u16, who: String) -> String {
+        say_after(ms, who).await
+    }
+}
+
+#[uniffi::export]
+fn get_say_after_traits() -> Vec<Arc<dyn SayAfterTrait>> {
+    vec![Arc::new(SayAfterImpl1), Arc::new(SayAfterImpl2)]
+}
+
+#[async_trait::async_trait]
+impl SayAfterUdlTrait for SayAfterImpl1 {
+    async fn say_after(&self, ms: u16, who: String) -> String {
+        say_after(ms, who).await
+    }
+}
+
+#[async_trait::async_trait]
+impl SayAfterUdlTrait for SayAfterImpl2 {
+    async fn say_after(&self, ms: u16, who: String) -> String {
+        say_after(ms, who).await
+    }
+}
+
+#[uniffi::export]
+fn get_say_after_udl_traits() -> Vec<Arc<dyn SayAfterUdlTrait>> {
+    vec![Arc::new(SayAfterImpl1), Arc::new(SayAfterImpl2)]
+}
+
+// Async callback interface implemented in foreign code
+#[uniffi::export(with_foreign)]
+#[async_trait::async_trait]
+pub trait AsyncParser: Send + Sync {
+    // Simple async method
+    async fn as_string(&self, delay_ms: i32, value: i32) -> String;
+    // Async method that can throw
+    async fn try_from_string(&self, delay_ms: i32, value: String) -> Result<i32, ParserError>;
+    // Void return, which requires special handling
+    async fn delay(&self, delay_ms: i32);
+    // Void return that can also throw
+    async fn try_delay(&self, delay_ms: String) -> Result<(), ParserError>;
+}
+
+#[derive(thiserror::Error, uniffi::Error, Debug)]
+pub enum ParserError {
+    #[error("NotAnInt")]
+    NotAnInt,
+    #[error("UnexpectedError")]
+    UnexpectedError,
+}
+
+impl From<uniffi::UnexpectedUniFFICallbackError> for ParserError {
+    fn from(_: uniffi::UnexpectedUniFFICallbackError) -> Self {
+        Self::UnexpectedError
+    }
+}
+
+#[uniffi::export]
+async fn as_string_using_trait(obj: Arc<dyn AsyncParser>, delay_ms: i32, value: i32) -> String {
+    obj.as_string(delay_ms, value).await
+}
+
+#[uniffi::export]
+async fn try_from_string_using_trait(
+    obj: Arc<dyn AsyncParser>,
+    delay_ms: i32,
+    value: String,
+) -> Result<i32, ParserError> {
+    obj.try_from_string(delay_ms, value).await
+}
+
+#[uniffi::export]
+async fn delay_using_trait(obj: Arc<dyn AsyncParser>, delay_ms: i32) {
+    obj.delay(delay_ms).await
+}
+
+#[uniffi::export]
+async fn try_delay_using_trait(
+    obj: Arc<dyn AsyncParser>,
+    delay_ms: String,
+) -> Result<(), ParserError> {
+    obj.try_delay(delay_ms).await
+}
+
+#[uniffi::export]
+async fn cancel_delay_using_trait(obj: Arc<dyn AsyncParser>, delay_ms: i32) {
+    let (abort_handle, abort_registration) = AbortHandle::new_pair();
+    thread::spawn(move || {
+        // Simulate a different thread aborting the process
+        thread::sleep(Duration::from_millis(1));
+        abort_handle.abort();
+    });
+    let future = Abortable::new(obj.delay(delay_ms), abort_registration);
+    assert_eq!(future.await, Err(Aborted));
 }
 
 uniffi::include_scaffolding!("futures");

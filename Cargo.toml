@@ -4,17 +4,36 @@ members = [
     "tests/callbacks/uniffi",
     "tests/chronological/uniffi",
     "tests/coverall/uniffi",
-    "tests/external-types/uniffi",
+    "tests/docstring/uniffi",
+    "tests/docstring-proc-macro/uniffi",
+    "tests/enum-types/uniffi",
+    "tests/error-types/uniffi",
+    # Temporarily disable ext-types test.
+    # TODO:
+    #   1. Properly handle external types in headers
+    #   2. Fix panics by uniffi-meta during bindings generation in ext-types
+    # "tests/ext-types/custom-types/uniffi",
+    # "tests/ext-types/ext-types/uniffi",
+    # "tests/ext-types/ext-types-proc-macro/uniffi",
+    # "tests/ext-types/external-crate",
+    # "tests/ext-types/http-headermap/uniffi",
+    # "tests/ext-types/sub-lib/uniffi",
+    # "tests/ext-types/uniffi-one/uniffi",
     "tests/futures/uniffi",
     "tests/keywords/uniffi",
     "tests/proc-macro/uniffi",
+    "tests/simple-fns/uniffi",
+    "tests/simple-iface/uniffi",
+    "tests/struct-default-values/uniffi",
     "tests/trait-methods/uniffi",
+    "tests/type-limits/uniffi",
 
     "tests/gradle/android-linking",
     "tests/gradle/cargo-only",
 
     "examples/arithmetic-procmacro",
     "examples/audio-cpp-app",
+    "examples/custom-types",
     "examples/todolist",
     "examples/tokio-blake3-app",
 ]

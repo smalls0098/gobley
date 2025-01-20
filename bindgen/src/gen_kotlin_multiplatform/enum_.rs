@@ -7,7 +7,7 @@
 use uniffi_bindgen::backend::Literal;
 use uniffi_bindgen::ComponentInterface;
 
-use crate::gen_kotlin_multiplatform::CodeType;
+use super::CodeType;
 
 #[derive(Debug)]
 pub struct EnumCodeType {

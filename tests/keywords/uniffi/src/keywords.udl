@@ -9,12 +9,10 @@ interface break {
 
 callback interface continue {
     return return(return v);
-    // TODO: Add #continue back
-    // continue? continue(sequence<continue> continue);
+    continue? continue();
     record<u8, break> break(break? v);
     while while(sequence<while> while);
-    // TODO: Add #class back
-    // record<u8, sequence<class>>? class(record<u8, sequence<class>> v);
+    record<u8, sequence<class>>? class(record<u8, sequence<class>> v);
 };
 
 dictionary return {
@@ -34,12 +32,16 @@ interface false {
     true(u8 object);
 };
 
-[Error]
 enum class {
     "object",
 };
 
 [Error]
 interface fun {
+   class(u8 object);
+};
+
+[Error]
+interface Error {
    class(u8 object);
 };

@@ -21,8 +21,6 @@ pub fn one_inner_by_ref(one: &One) -> i32 {
 #[derive(uniffi::Record)]
 pub struct Two {
     a: String,
-    #[uniffi(default = None)]
-    b: Option<Vec<bool>>,
 }
 
 #[derive(uniffi::Record)]
@@ -56,31 +54,49 @@ impl Unused {
 
 #[uniffi::export]
 pub trait Trait: Send + Sync {
-    fn name(&self) -> String;
+    // Test the absence of `with_foreign` by inputting reference arguments, which is
+    // incompatible with callback interfaces
+    #[allow(clippy::ptr_arg)]
+    fn concat_strings(&self, a: &str, b: &str) -> String;
 }
 
 struct TraitImpl {}
 
 impl Trait for TraitImpl {
+    fn concat_strings(&self, a: &str, b: &str) -> String {
+        format!("{a}{b}")
+    }
+}
+
+#[uniffi::export(with_foreign)]
+pub trait TraitWithForeign: Send + Sync {
+    fn name(&self) -> String;
+}
+
+struct RustTraitImpl {}
+
+impl TraitWithForeign for RustTraitImpl {
     fn name(&self) -> String {
-        "TraitImpl".to_string()
+        "RustTraitImpl".to_string()
     }
 }
 
 #[derive(uniffi::Object)]
 pub struct Object;
 
-#[uniffi::export]
+#[cfg_attr(feature = "myfeature", uniffi::export)]
 impl Object {
-    #[uniffi::constructor]
+    #[cfg_attr(feature = "myfeature", uniffi::constructor)]
     fn new() -> Arc<Self> {
         Arc::new(Self)
     }
 
     #[uniffi::constructor]
-    fn named_ctor(arg: u32) -> Arc<Self> {
+    fn named_ctor(arg: u32) -> Self {
         _ = arg;
-        Self::new()
+        // This constructor returns Self directly.  UniFFI ensures that it's wrapped in an Arc
+        // before sending it across the FFI.
+        Self
     }
 
     fn is_heavy(&self) -> MaybeBool {
@@ -95,6 +111,13 @@ impl Object {
         inc.unwrap_or_else(|| Arc::new(TraitImpl {}))
     }
 
+    fn get_trait_with_foreign(
+        &self,
+        inc: Option<Arc<dyn TraitWithForeign>>,
+    ) -> Arc<dyn TraitWithForeign> {
+        inc.unwrap_or_else(|| Arc::new(RustTraitImpl {}))
+    }
+
     fn take_error(&self, e: BasicError) -> u32 {
         assert!(matches!(e, BasicError::InvalidInput));
         42
@@ -102,8 +125,8 @@ impl Object {
 }
 
 #[uniffi::export]
-fn get_trait_name_by_ref(t: &dyn Trait) -> String {
-    t.name()
+fn concat_strings_by_ref(t: &dyn Trait, a: &str, b: &str) -> String {
+    t.concat_strings(a, b)
 }
 
 #[uniffi::export]
@@ -121,7 +144,6 @@ fn make_hashmap(k: i8, v: u64) -> HashMap<i8, u64> {
     HashMap::from([(k, v)])
 }
 
-// XXX - fails to call this from python - https://github.com/mozilla/uniffi-rs/issues/1774
 #[uniffi::export]
 fn return_hashmap(h: HashMap<i8, u64>) -> HashMap<i8, u64> {
     h
@@ -154,6 +176,8 @@ fn call_callback_interface(cb: Box<dyn TestCallbackInterface>) {
         Err(BasicError::UnexpectedError { .. }),
     ));
     assert_eq!(42, cb.callback_handler(Object::new()));
+
+    assert_eq!(6, cb.get_other_callback_interface().multiply(2, 3));
 }
 
 // Type that's defined in the UDL and not wrapped with #[uniffi::export]
@@ -180,6 +204,27 @@ pub enum MaybeBool {
     True,
     False,
     Uncertain,
+}
+
+#[derive(uniffi::Enum)]
+pub enum MixedEnum {
+    None,
+    String(String),
+    Int(i64),
+    Both(String, i64),
+    All { s: String, i: i64 },
+}
+
+#[uniffi::export]
+fn get_mixed_enum(v: Option<MixedEnum>) -> MixedEnum {
+    v.unwrap_or(MixedEnum::Int(1))
+}
+
+#[repr(u8)]
+#[derive(uniffi::Enum)]
+pub enum ReprU8 {
+    One = 1,
+    Three = 0x3,
 }
 
 #[uniffi::export]
@@ -231,6 +276,108 @@ impl Object {
                 Ok(())
             }
         }
+    }
+}
+
+// defined in UDL.
+fn get_one(one: Option<One>) -> One {
+    one.unwrap_or(One { inner: 0 })
+}
+
+fn get_bool(b: Option<MaybeBool>) -> MaybeBool {
+    b.unwrap_or(MaybeBool::Uncertain)
+}
+
+fn get_object(o: Option<Arc<Object>>) -> Arc<Object> {
+    o.unwrap_or_else(Object::new)
+}
+
+fn get_trait(o: Option<Arc<dyn Trait>>) -> Arc<dyn Trait> {
+    o.unwrap_or_else(|| Arc::new(TraitImpl {}))
+}
+
+fn get_trait_with_foreign(o: Option<Arc<dyn TraitWithForeign>>) -> Arc<dyn TraitWithForeign> {
+    o.unwrap_or_else(|| Arc::new(RustTraitImpl {}))
+}
+
+#[derive(Default)]
+struct Externals {
+    one: Option<One>,
+    bool: Option<MaybeBool>,
+}
+
+fn get_externals(e: Option<Externals>) -> Externals {
+    e.unwrap_or_default()
+}
+
+#[uniffi::export]
+pub fn join(parts: &[String], sep: &str) -> String {
+    parts.join(sep)
+}
+
+// Custom names
+#[derive(uniffi::Object)]
+pub struct Renamed;
+
+// `renamed_new` becomes the default constructor because it's named `new`
+#[uniffi::export]
+impl Renamed {
+    #[uniffi::constructor(name = "new")]
+    fn renamed_new() -> Arc<Self> {
+        Arc::new(Self)
+    }
+
+    #[uniffi::method(name = "func")]
+    fn renamed_func(&self) -> bool {
+        true
+    }
+}
+
+#[uniffi::export(name = "rename_test")]
+fn renamed_rename_test() -> bool {
+    true
+}
+
+/// Test defaults on Records
+#[derive(uniffi::Record)]
+pub struct RecordWithDefaults {
+    no_default_string: String,
+    #[uniffi(default = true)]
+    boolean: bool,
+    #[uniffi(default = 42)]
+    integer: i32,
+    #[uniffi(default = 4.2)]
+    float_var: f64,
+    #[uniffi(default=[])]
+    vec: Vec<bool>,
+    #[uniffi(default=None)]
+    opt_vec: Option<Vec<bool>>,
+    #[uniffi(default = Some(42))]
+    opt_integer: Option<i32>,
+}
+
+/// Test defaults on top-level functions
+#[uniffi::export(default(num = 21))]
+fn double_with_default(num: i32) -> i32 {
+    num + num
+}
+
+/// Test defaults on constructors / methods
+#[derive(uniffi::Object)]
+pub struct ObjectWithDefaults {
+    num: i32,
+}
+
+#[uniffi::export]
+impl ObjectWithDefaults {
+    #[uniffi::constructor(default(num = 30))]
+    fn new(num: i32) -> Self {
+        Self { num }
+    }
+
+    #[uniffi::method(default(other = 12))]
+    fn add_to_num(&self, other: i32) -> i32 {
+        self.num + other
     }
 }
 

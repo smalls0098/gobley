@@ -135,13 +135,15 @@ class UniFfiPlugin : Plugin<Project> {
             cargoPackage.set(cargoExtension.cargoPackage)
             bindgen.set(installBindgen.get().bindgen)
             outputDirectory.set(bindingsDirectory)
+            if (uniFfiExtension.formatCode.isPresent)
+                formatCode.set(uniFfiExtension.formatCode.get())
+
+            if (bindingsGeneration.config.isPresent)
+                config.set(bindingsGeneration.config)
 
             when (bindingsGeneration) {
                 is BindingsGenerationFromUdl -> {
                     libraryMode.set(false)
-                    if (bindingsGeneration.config.isPresent) config.set(bindingsGeneration.config)
-                    // TODO: --library panics with config(uniffi.toml) file, an option to control this in the extension is required
-                    // libraryFile.set(bindingsOutputFile)
                     source.set(bindingsGeneration.udlFile)
                 }
 

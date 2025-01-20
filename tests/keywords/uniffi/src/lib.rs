@@ -1,8 +1,6 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::{collections::HashMap, sync::Arc};
 
@@ -19,10 +17,10 @@ impl r#break {
 #[allow(non_camel_case_types)]
 trait r#continue {
     fn r#return(&self, v: r#return) -> r#return;
-    // fn r#continue(&self, v: Vec<Box<dyn r#continue>>) -> Option<Box<dyn r#continue>>;
+    fn r#continue(&self) -> Option<Box<dyn r#continue>>;
     fn r#break(&self, _v: Option<Arc<r#break>>) -> HashMap<u8, Arc<r#break>>;
     fn r#while(&self, _v: Vec<r#while>) -> r#while;
-    // fn class(&self, _v: HashMap<u8, Vec<class>>) -> Option<HashMap<u8, Vec<class>>>;
+    fn class(&self, _v: HashMap<u8, Vec<class>>) -> Option<HashMap<u8, Vec<class>>>;
 }
 
 #[allow(non_camel_case_types)]
@@ -46,9 +44,8 @@ pub enum r#false {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug)]
 pub enum class {
-    #[error("object error")]
     object,
 }
 
@@ -59,5 +56,23 @@ pub enum fun {
     class { object: u8 },
 }
 
+// `FooError` is turned into `FooException`, so this enum will end up
+// being named just `Exception`. Without special care, this will clash
+// with `kotlin.Exception` class.
+#[allow(non_camel_case_types)]
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("class?")]
+    class { object: u8 },
+}
+
+#[allow(non_camel_case_types)]
+pub struct r#else(pub r#return);
+uniffi::custom_newtype!(r#else, r#return);
+
+#[uniffi::export]
+pub fn get_else(e: r#else) -> r#else {
+    e
+}
+
 uniffi::include_scaffolding!("keywords");
-uniffi_reexport_scaffolding!();
