@@ -96,6 +96,8 @@ pub struct Config {
     custom_types: HashMap<String, CustomTypeConfig>,
     #[serde(default)]
     pub(super) external_packages: HashMap<String, String>,
+    #[serde(default)]
+    disable_java_cleaner: bool,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -131,6 +133,7 @@ impl Config {
 pub struct MultiplatformBindings {
     pub common: String,
     pub jvm: String,
+    pub android: String,
     pub native: String,
     pub header: String,
 }
@@ -140,15 +143,19 @@ pub fn generate_bindings(
     config: &Config,
     ci: &ComponentInterface,
 ) -> Result<MultiplatformBindings> {
-    let common = CommonKotlinWrapper::new(config.clone(), ci)
+    let common = CommonKotlinWrapper::new("common", config.clone(), ci)
         .render()
         .context("failed to render common Kotlin bindings")?;
 
-    let jvm = JvmKotlinWrapper::new(config.clone(), ci)
+    let jvm = AndroidJvmKotlinWrapper::new("jvm", config.clone(), ci)
         .render()
         .context("failed to render Kotlin/JVM bindings")?;
 
-    let native = NativeKotlinWrapper::new(config.clone(), ci)
+    let android = AndroidJvmKotlinWrapper::new("android", config.clone(), ci)
+        .render()
+        .context("failed to render Android Kotlin/JVM bindings")?;
+
+    let native = NativeKotlinWrapper::new("native", config.clone(), ci)
         .render()
         .context("failed to render Kotlin/Native bindings")?;
 
@@ -159,6 +166,7 @@ pub fn generate_bindings(
     Ok(MultiplatformBindings {
         common,
         jvm,
+        android,
         native,
         header,
     })
@@ -195,6 +203,7 @@ macro_rules! kotlin_type_renderer {
         #[template(syntax = "kt", escape = "none", path = $source_file)]
         #[allow(dead_code)]
         pub struct $TypeRenderer<'a> {
+            module_name: &'a str,
             config: &'a Config,
             ci: &'a ComponentInterface,
             // Track included modules for the `include_once()` macro
@@ -205,8 +214,9 @@ macro_rules! kotlin_type_renderer {
 
         #[allow(dead_code)]
         impl<'a> $TypeRenderer<'a> {
-            fn new(config: &'a Config, ci: &'a ComponentInterface) -> Self {
+            fn new(module_name: &'a str, config: &'a Config, ci: &'a ComponentInterface) -> Self {
                 Self {
+                    module_name,
                     config,
                     ci,
                     include_once_names: RefCell::new(HashSet::new()),
@@ -270,6 +280,7 @@ macro_rules! kotlin_wrapper {
         #[template(syntax = "kt", escape = "none", path = $source_file)]
         #[allow(dead_code)]
         pub struct $KotlinWrapper<'a> {
+            module_name: &'a str,
             config: Config,
             ci: &'a ComponentInterface,
             type_helper_code: String,
@@ -278,11 +289,12 @@ macro_rules! kotlin_wrapper {
 
         #[allow(dead_code)]
         impl<'a> $KotlinWrapper<'a> {
-            pub fn new(config: Config, ci: &'a ComponentInterface) -> Self {
-                let type_renderer = $TypeRenderer::new(&config, ci);
+            pub fn new(module_name: &'a str, config: Config, ci: &'a ComponentInterface) -> Self {
+                let type_renderer = $TypeRenderer::new(module_name, &config, ci);
                 let type_helper_code = type_renderer.render().unwrap();
                 let type_imports = type_renderer.imports.into_inner();
                 Self {
+                    module_name,
                     config,
                     ci,
                     type_helper_code,
@@ -308,8 +320,12 @@ macro_rules! kotlin_wrapper {
 kotlin_type_renderer!(CommonTypeRenderer, "common/Types.kt");
 kotlin_wrapper!(CommonKotlinWrapper, CommonTypeRenderer, "common/wrapper.kt");
 
-kotlin_type_renderer!(JvmTypeRenderer, "jvm/Types.kt");
-kotlin_wrapper!(JvmKotlinWrapper, JvmTypeRenderer, "jvm/wrapper.kt");
+kotlin_type_renderer!(AndroidJvmTypeRenderer, "android+jvm/Types.kt");
+kotlin_wrapper!(
+    AndroidJvmKotlinWrapper,
+    AndroidJvmTypeRenderer,
+    "android+jvm/wrapper.kt"
+);
 
 kotlin_type_renderer!(NativeTypeRenderer, "native/Types.kt");
 kotlin_wrapper!(NativeKotlinWrapper, NativeTypeRenderer, "native/wrapper.kt");

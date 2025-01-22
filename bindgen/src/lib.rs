@@ -68,6 +68,7 @@ impl BindingGenerator for KotlinBindingGenerator {
 
             write_bindings_target(ci, settings, config, "common", bindings.common);
             write_bindings_target(ci, settings, config, "jvm", bindings.jvm);
+            write_bindings_target(ci, settings, config, "android", bindings.android);
             write_bindings_target(ci, settings, config, "native", bindings.native);
 
             write_cinterop(ci, &settings.out_dir, bindings.header);
