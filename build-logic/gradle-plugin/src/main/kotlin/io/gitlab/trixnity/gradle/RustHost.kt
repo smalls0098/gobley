@@ -11,7 +11,7 @@ import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import java.io.File
 import java.io.Serializable
 
-data class CargoHost(val platform: Platform, val arch: Arch) : Serializable {
+data class RustHost(val platform: Platform, val arch: Arch) : Serializable {
     enum class Platform {
         Windows, MacOS, Linux;
 
@@ -43,7 +43,7 @@ data class CargoHost(val platform: Platform, val arch: Arch) : Serializable {
                 )!!
             )
 
-        val defaultCargoInstallationDir: File
+        val defaultToolchainDirectory: File
             get() = homeDirectory.resolve(".cargo/bin")
 
         val supportedTargets: Array<RustTarget>
@@ -108,7 +108,7 @@ data class CargoHost(val platform: Platform, val arch: Arch) : Serializable {
         }
     }
 
-    val hostTarget: RustTarget
+    val rustTarget: RustTarget
         get() = when (platform) {
             Platform.Windows -> when (arch) {
                 Arch.X64 -> RustWindowsTarget.X64
@@ -155,6 +155,6 @@ data class CargoHost(val platform: Platform, val arch: Arch) : Serializable {
         get() = "${platform.konanName}_${arch.konanName}"
 
     companion object {
-        val current: CargoHost = CargoHost(Platform.current, Arch.current)
+        val current: RustHost = RustHost(Platform.current, Arch.current)
     }
 }
