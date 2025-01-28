@@ -1,18 +1,18 @@
 [package]
-name = "uniffi-kmm-example-audio-cpp-app"
+name = "uniffi-kmm-fixture-error-types"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [lib]
-name = "uniffi_kmm_example_audio_cpp_app"
+name = "uniffi_kmm_fixture_error_types"
 crate-type = ["cdylib", "staticlib"]
 path = "src/commonMain/rust/lib.rs"
 
 [dependencies]
-uniffi = { workspace = true, features = ["tokio"] }
+anyhow = { workspace = true }
+uniffi = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
 
 [build-dependencies]
-cc = "1"
+uniffi-kmm-fixture-build-common = { path = "../../build-common" }

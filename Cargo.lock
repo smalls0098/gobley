@@ -1704,8 +1704,6 @@ dependencies = [
 name = "uniffi-kmm-example-custom-types"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "bytes",
  "uniffi",
  "url",
 ]
@@ -1725,8 +1723,13 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "reqwest",
- "thiserror",
- "tokio",
+ "uniffi",
+]
+
+[[package]]
+name = "uniffi-kmm-fixture-build-common"
+version = "0.1.0"
+dependencies = [
  "uniffi",
 ]
 
@@ -1734,73 +1737,55 @@ dependencies = [
 name = "uniffi-kmm-fixture-callbacks"
 version = "0.1.0"
 dependencies = [
- "camino",
- "once_cell",
  "thiserror",
  "uniffi",
- "uniffi_bindgen",
- "uniffi_macros",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-chronological"
 version = "0.1.0"
 dependencies = [
- "camino",
  "chrono",
- "once_cell",
  "thiserror",
  "uniffi",
- "uniffi_bindgen",
- "uniffi_macros",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-coverall"
 version = "0.1.0"
 dependencies = [
- "camino",
  "once_cell",
  "thiserror",
  "uniffi",
- "uniffi_bindgen",
- "uniffi_macros",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-docstring"
 version = "0.1.0"
 dependencies = [
- "camino",
- "once_cell",
  "thiserror",
  "uniffi",
- "uniffi_bindgen",
- "uniffi_macros",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-docstring-proc-macro"
 version = "0.1.0"
 dependencies = [
- "camino",
- "once_cell",
  "thiserror",
  "uniffi",
- "uniffi_bindgen",
- "uniffi_macros",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-enum-types"
 version = "0.1.0"
 dependencies = [
- "camino",
- "once_cell",
- "thiserror",
  "uniffi",
- "uniffi_bindgen",
- "uniffi_macros",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
@@ -1808,12 +1793,9 @@ name = "uniffi-kmm-fixture-error-types"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "camino",
- "once_cell",
  "thiserror",
  "uniffi",
- "uniffi_bindgen",
- "uniffi_macros",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
@@ -1821,14 +1803,12 @@ name = "uniffi-kmm-fixture-futures"
 version = "0.21.0"
 dependencies = [
  "async-trait",
- "camino",
  "futures",
  "once_cell",
  "thiserror",
  "tokio",
  "uniffi",
- "uniffi_bindgen",
- "uniffi_macros",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
@@ -1854,72 +1834,58 @@ dependencies = [
 name = "uniffi-kmm-fixture-keywords"
 version = "0.1.0"
 dependencies = [
- "camino",
- "once_cell",
  "thiserror",
  "uniffi",
- "uniffi_bindgen",
- "uniffi_macros",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-proc-macro"
 version = "0.1.0"
 dependencies = [
- "camino",
- "lazy_static",
  "thiserror",
  "uniffi",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-simple-fns"
 version = "0.1.0"
 dependencies = [
- "camino",
- "lazy_static",
- "thiserror",
  "uniffi",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-simple-iface"
 version = "0.1.0"
 dependencies = [
- "camino",
- "lazy_static",
- "thiserror",
  "uniffi",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-struct-default-values"
 version = "0.1.0"
 dependencies = [
- "camino",
- "lazy_static",
- "thiserror",
  "uniffi",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-trait-methods"
 version = "0.1.0"
 dependencies = [
- "camino",
- "lazy_static",
- "thiserror",
  "uniffi",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
 name = "uniffi-kmm-fixture-type-limits"
 version = "0.1.0"
 dependencies = [
- "camino",
- "lazy_static",
- "thiserror",
  "uniffi",
+ "uniffi-kmm-fixture-build-common",
 ]
 
 [[package]]
