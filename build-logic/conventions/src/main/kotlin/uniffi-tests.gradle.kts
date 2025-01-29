@@ -9,7 +9,6 @@ plugins {
 }
 
 cargo {
-    packageDirectory = layout.projectDirectory.dir("uniffi")
     builds.jvm {
         jvm.set(rustTarget == RustHost.current.rustTarget)
     }
