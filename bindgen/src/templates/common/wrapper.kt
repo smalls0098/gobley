@@ -19,33 +19,14 @@ package {{ config.package_name() }}
 
 import kotlin.jvm.JvmField
 
-{%- for req in self.imports() %}
-{{ req.render() }}
-{%- endfor %}
-
 {% include "PointerHelper.kt" %}
-
-{% include "ByteBuffer.kt" %}
-{% include "RustBufferTemplate.kt" %}
-{% include "FfiConverterTemplate.kt" %}
 {% include "Helpers.kt" %}
-{% include "HandleMap.kt" %}
-{% include "ReferenceHelper.kt" %}
-
-// Contains loading, initialization code,
-// and the FFI Function declarations in a com.sun.jna.Library.
-{% include "NamespaceLibraryTemplate.kt" %}
-
-// Async support
-{%- if ci.has_async_fns() %}
-{% include "Async.kt" %}
-{%- endif %}
 
 // Public interface members begin here.
 {{ type_helper_code }}
 
 {%- for func in ci.function_definitions() %}
-{%- include "TopLevelFunctionTemplate.kt" %}
+{% include "TopLevelFunctionTemplate.kt" %}
 {%- endfor %}
 
 {% import "macros.kt" as kt %}

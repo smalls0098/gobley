@@ -1,3 +1,4 @@
+{% include "ffi/ObjectCleanerHelper.kt" %}
 // The fallback Jna cleaner, which is available for both Android, and the JVM.
 private class UniffiJnaCleaner : UniffiCleaner {
     private val cleaner = com.sun.jna.internal.Cleaner.getCleaner()

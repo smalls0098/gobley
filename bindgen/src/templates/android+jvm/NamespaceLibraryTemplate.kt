@@ -42,41 +42,30 @@ internal open class {{ ffi_struct.name()|ffi_struct_name }}Struct(
     ): {{ ffi_struct.name()|ffi_struct_name }}({%- for field in ffi_struct.fields() %}{{ field.name()|var_name }}, {%- endfor %}), Structure.ByValue
 }
 
-internal actual typealias {{ ffi_struct.name()|ffi_struct_name }} = {{ ffi_struct.name()|ffi_struct_name }}Struct
+internal typealias {{ ffi_struct.name()|ffi_struct_name }} = {{ ffi_struct.name()|ffi_struct_name }}Struct
 {% for field in ffi_struct.fields() %}
-internal actual var {{ ffi_struct.name()|ffi_struct_name }}.{{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }}
+internal var {{ ffi_struct.name()|ffi_struct_name }}.{{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }}
     get() = this.{{ field.name()|var_name }}
     set(value) { this.{{ field.name()|var_name }} = value as {{ field.type_().borrow()|ffi_type_name_for_ffi_struct_inner }} }
 {% endfor %}
 
-internal actual fun {{ ffi_struct.name()|ffi_struct_name }}.uniffiSetValue(other: {{ ffi_struct.name()|ffi_struct_name }}) {
+internal fun {{ ffi_struct.name()|ffi_struct_name }}.uniffiSetValue(other: {{ ffi_struct.name()|ffi_struct_name }}) {
     {%- for field in ffi_struct.fields() %}
     {{ field.name()|var_name }} = other.{{ field.name()|var_name }}
     {%- endfor %}
 }
-internal actual fun {{ ffi_struct.name()|ffi_struct_name }}.uniffiSetValue(other: {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue) {
+internal fun {{ ffi_struct.name()|ffi_struct_name }}.uniffiSetValue(other: {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue) {
     {%- for field in ffi_struct.fields() %}
     {{ field.name()|var_name }} = other.{{ field.name()|var_name }}
     {%- endfor %}
 }
 
-internal actual typealias {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue = {{ ffi_struct.name()|ffi_struct_name }}Struct.UniffiByValue
+internal typealias {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue = {{ ffi_struct.name()|ffi_struct_name }}Struct.UniffiByValue
 {% for field in ffi_struct.fields() %}
-internal actual var {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue.{{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }}
+internal val {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue.{{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }}
     get() = this.{{ field.name()|var_name }}
-    set(value) { this.{{ field.name()|var_name }} = value as {{ field.type_().borrow()|ffi_type_name_for_ffi_struct_inner }} }
 {% endfor %}
 
-internal actual fun {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue.uniffiSetValue(other: {{ ffi_struct.name()|ffi_struct_name }}) {
-    {%- for field in ffi_struct.fields() %}
-    {{ field.name()|var_name }} = other.{{ field.name()|var_name }}
-    {%- endfor %}
-}
-internal actual fun {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue.uniffiSetValue(other: {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue) {
-    {%- for field in ffi_struct.fields() %}
-    {{ field.name()|var_name }} = other.{{ field.name()|var_name }}
-    {%- endfor %}
-}
 {%- when FfiDefinition::Function(_) %}
 {# functions are handled below #}
 {%- endmatch %}
@@ -100,9 +89,9 @@ private inline fun <reified Lib : Library> loadIndirect(
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
-internal actual interface UniffiLib : Library {
-    actual companion object {
-        internal actual val INSTANCE: UniffiLib by lazy {
+internal interface UniffiLib : Library {
+    companion object {
+        internal val INSTANCE: UniffiLib by lazy {
             loadIndirect<UniffiLib>(componentName = "{{ ci.namespace() }}")
             .also { lib: UniffiLib ->
                 uniffiCheckContractApiVersion(lib)
@@ -114,14 +103,14 @@ internal actual interface UniffiLib : Library {
         }
         {% if ci.contains_object_types() %}
         // The Cleaner for the whole library
-        internal actual val CLEANER: UniffiCleaner by lazy {
+        internal val CLEANER: UniffiCleaner by lazy {
             UniffiCleaner.create()
         }
         {%- endif %}
     }
 
     {% for func in ci.iter_ffi_function_definitions() -%}
-    actual fun {{ func.name() }}(
+    fun {{ func.name() }}(
         {%- call kt::arg_list_ffi_decl_for_ffi_function(func) %}
     ): {% match func.return_type() %}{% when Some with (return_type) %}{{ return_type.borrow()|ffi_type_name_for_ffi_function }}{% when None %}Unit{% endmatch %}
     {% endfor %}

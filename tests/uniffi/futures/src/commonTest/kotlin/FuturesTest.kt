@@ -21,6 +21,8 @@ import kotlin.test.Test
 import kotlin.test.assertFails
 import kotlin.time.measureTime
 
+expect fun uniffiForeignFutureHandleMapSize(): Int
+
 class FuturesTest {
     @BeforeTest
     fun fireUpUniffi() = runTest {
@@ -211,7 +213,7 @@ class FuturesTest {
         traitObj.completedDelays shouldBe completedDelaysBefore
 
         // Test that all handles were cleaned up
-        uniffiForeignFutureHandleMap.size shouldBe 0
+        uniffiForeignFutureHandleMapSize() shouldBe 0
     }
 
     @Test

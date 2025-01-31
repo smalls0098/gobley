@@ -1,5 +1,7 @@
 
+{% if module_name != "native" %}
 @kotlin.jvm.JvmInline
+{% endif -%}
 value class ByteBuffer(private val _buffer: okio.Buffer) {
     constructor() : this(okio.Buffer()) {}
 
@@ -42,7 +44,7 @@ value class ByteBuffer(private val _buffer: okio.Buffer) {
     fun putDouble(value: Double) = _buffer.writeLong(value.toRawBits())
 
 
-    private fun writeUtf8(value: String) = _buffer.writeUtf8(value)
+    fun writeUtf8(value: String) = _buffer.writeUtf8(value)
 
     companion object {
         fun fromUtf8(value: String): ByteBuffer {

@@ -40,6 +40,6 @@ public object FfiConverterString: FfiConverter<String, RustBufferByValue> {
         // TODO: solve this more cleanly
         val byteBuf = toUtf8(value)
         buf.putInt(byteBuf.limit().toInt())
-        buf.internal().writeUtf8(value)
+        buf.writeUtf8(value)
     }
 }

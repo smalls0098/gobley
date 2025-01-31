@@ -18,7 +18,7 @@
 {%- macro to_raw_ffi_call(func) -%}
     {%- match func.throws_type() %}
     {%- when Some with (e) %}
-    uniffiRustCallWithError({{ e|type_name(ci) }})
+    uniffiRustCallWithError({{ e|type_name(ci) }}ErrorHandler)
     {%- else %}
     uniffiRustCall()
     {%- endmatch %} { _status ->
@@ -40,12 +40,35 @@
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
     {{ func_decl }} suspend fun {{ callable.name()|fn_name }}(
         {%- call arg_list(callable, !callable.takes_self()) -%}
+    ){% match callable.return_type() %}{% when Some with (return_type) %} : {{ return_type|type_name(ci) }}{% when None %}{%- endmatch %}
+    {%- else -%}
+    {{ func_decl }} fun {{ callable.name()|fn_name }}(
+        {%- call arg_list(callable, !callable.takes_self()) -%}
+    ){%- match callable.return_type() -%}
+    {%-         when Some with (return_type) -%}
+        : {{ return_type|type_name(ci) }}
+    {%-         else %}
+    {%-     endmatch %}
+    {% endif %}
+{% endmacro %}
+
+{%- macro func_decl_with_body(func_decl, callable, indent) %}
+    {%- call docstring(callable, indent) %}
+    {%- match callable.throws_type() -%}
+    {%-     when Some(throwable) %}
+    @Throws({{ throwable|type_name(ci) }}::class {%- if callable.is_async() -%},kotlin.coroutines.cancellation.CancellationException::class{%- endif -%})
+    {%-     else -%}
+    {%- endmatch -%}
+    {%- if callable.is_async() %}
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    {{ func_decl }} suspend fun {{ callable.name()|fn_name }}(
+        {%- call arg_list(callable, false) -%}
     ){% match callable.return_type() %}{% when Some with (return_type) %} : {{ return_type|type_name(ci) }}{% when None %}{%- endmatch %} {
         return {% call call_async(callable) %}
     }
     {%- else -%}
     {{ func_decl }} fun {{ callable.name()|fn_name }}(
-        {%- call arg_list(callable, !callable.takes_self()) -%}
+        {%- call arg_list(callable, false) -%}
     ){%- match callable.return_type() -%}
     {%-         when Some with (return_type) -%}
         : {{ return_type|type_name(ci) }} {
@@ -83,7 +106,7 @@
         // Error FFI converter
         {%- match callable.throws_type() %}
         {%- when Some(e) %}
-        {{ e|type_name(ci) }}.ErrorHandler,
+        {{ e|type_name(ci) }}ErrorHandler,
         {%- when None %}
         UniffiNullRustCallStatusErrorHandler,
         {%- endmatch %}
@@ -162,9 +185,11 @@ v{{- field_num -}}
 
  // Macro for destroying fields
 {%- macro destroy_fields(member) %}
-    {%- for field in member.fields() %}
-        Disposable.destroy(this.{%- call field_name(field, loop.index) -%})
-    {% endfor -%}
+    Disposable.destroy(
+        {%- for field in member.fields() %}
+            this.{%- call field_name(field, loop.index) -%},
+        {% endfor -%}
+    )
 {%- endmacro -%}
 
 {%- macro docstring_value(maybe_docstring, indent_spaces) %}

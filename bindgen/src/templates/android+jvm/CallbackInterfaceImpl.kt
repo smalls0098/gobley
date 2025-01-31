@@ -1,7 +1,8 @@
+{% if self.include_once_check("ffi/CallbackInterfaceRuntime.kt") %}{% include "ffi/CallbackInterfaceRuntime.kt" %}{% endif %}
 {%- let trait_impl=format!("uniffiCallbackInterface{}", name) %}
 
 // Put the implementation in an object so we don't pollute the top-level namespace
-internal actual object {{ trait_impl }} {
+internal object {{ trait_impl }} {
     {%- for (ffi_callback, meth) in vtable_methods.iter() %}
     internal object {{ meth.name()|var_name }}: {{ ffi_callback.name()|ffi_callback_name }} {
         override fun callback ({%- call kt::arg_list_ffi_decl(ffi_callback) -%})
@@ -98,7 +99,7 @@ internal actual object {{ trait_impl }} {
         uniffiFree,
     )
 
-    internal actual fun register(lib: UniffiLib) {
+    internal fun register(lib: UniffiLib) {
         lib.{{ ffi_init_callback.name() }}(vtable)
     }
 }

@@ -1,9 +1,10 @@
+{% if self.include_once_check("ffi/CallbackInterfaceRuntime.kt") %}{% include "ffi/CallbackInterfaceRuntime.kt" %}{% endif %}
 {{ self.add_import("kotlinx.cinterop.invoke") }}
 
 {%- let trait_impl=format!("uniffiCallbackInterface{}", name) %}
 
 // Put the implementation in an object so we don't pollute the top-level namespace
-internal actual object {{ trait_impl }} {
+internal object {{ trait_impl }} {
     {%- for (ffi_callback, meth) in vtable_methods.iter() %}
     internal fun {{ meth.name()|var_name }}({%- call kt::arg_list_ffi_decl(ffi_callback) -%})
     {%- if let Some(return_type) = ffi_callback.return_type() %}
@@ -120,7 +121,7 @@ internal actual object {{ trait_impl }} {
         } as {{ ci.namespace() }}.cinterop.{{ "CallbackInterfaceFree"|ffi_callback_name }}
     }.ptr
 
-    internal actual fun register(lib: UniffiLib) {
+    internal fun register(lib: UniffiLib) {
         lib.{{ ffi_init_callback.name() }}(vtable)
     }
 }

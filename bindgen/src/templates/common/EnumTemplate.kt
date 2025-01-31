@@ -27,21 +27,6 @@ enum class {{ type_name }}(val value: {{ variant_discr_type|type_name(ci) }}) {
     companion object
 }
 {% endmatch %}
-
-public object {{ e|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
-    override fun read(buf: ByteBuffer) = try {
-        {{ type_name }}.values()[buf.getInt() - 1]
-    } catch (e: IndexOutOfBoundsException) {
-        throw RuntimeException("invalid enum value, something is very wrong!!", e)
-    }
-
-    override fun allocationSize(value: {{ type_name }}) = 4UL
-
-    override fun write(value: {{ type_name }}, buf: ByteBuffer) {
-        buf.putInt(value.ordinal + 1)
-    }
-}
-
 {% else %}
 
 {%- call kt::docstring(e, 0) %}
@@ -49,7 +34,9 @@ sealed class {{ type_name }}{% if contains_object_references %}: Disposable {% e
     {% for variant in e.variants() -%}
     {%- call kt::docstring(variant, 4) %}
     {% if !variant.has_fields() -%}
-    object {{ variant|variant_type_name(ci) }} : {{ type_name }}()
+    object {{ variant|variant_type_name(ci) }} : {{ type_name }}() {% if contains_object_references %} {
+        override fun destroy() = Unit
+    } {% endif %}
     {% else -%}
     data class {{ variant|variant_type_name(ci) }}(
         {%- for field in variant.fields() -%}
@@ -57,71 +44,19 @@ sealed class {{ type_name }}{% if contains_object_references %}: Disposable {% e
         val {% call kt::field_name(field, loop.index) %}: {{ field|type_name(ci) }}{% if loop.last %}{% else %}, {% endif %}
         {%- endfor -%}
     ) : {{ type_name }}() {
-        companion object
+        {% if contains_object_references %}
+        @Suppress("UNNECESSARY_SAFE_CALL") // codegen is much simpler if we unconditionally emit safe calls here
+        override fun destroy() {
+            {%- if variant.has_fields() %}
+            {% call kt::destroy_fields(variant) %}
+            {% else -%}
+            // Nothing to destroy
+            {%- endif %}
+        }
+        {% endif %}
     }
     {%- endif %}
     {% endfor %}
-
-    {% if contains_object_references %}
-    @Suppress("UNNECESSARY_SAFE_CALL") // codegen is much simpler if we unconditionally emit safe calls here
-    override fun destroy() {
-        when(this) {
-            {%- for variant in e.variants() %}
-            is {{ type_name }}.{{ variant|variant_type_name(ci) }} -> {
-                {%- if variant.has_fields() %}
-                {% call kt::destroy_fields(variant) %}
-                {% else -%}
-                // Nothing to destroy
-                {%- endif %}
-            }
-            {%- endfor %}
-        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
-    }
-    {% endif %}
-    companion object
-}
-
-public object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}>{
-    override fun read(buf: ByteBuffer): {{ type_name }} {
-        return when(buf.getInt()) {
-            {%- for variant in e.variants() %}
-            {{ loop.index }} -> {{ type_name }}.{{ variant|variant_type_name(ci) }}{% if variant.has_fields() %}(
-                {% for field in variant.fields() -%}
-                {{ field|read_fn }}(buf),
-                {% endfor -%}
-            ){%- endif -%}
-            {%- endfor %}
-            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
-        }
-    }
-
-    override fun allocationSize(value: {{ type_name }}) = when(value) {
-        {%- for variant in e.variants() %}
-        is {{ type_name }}.{{ variant|variant_type_name(ci) }} -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                {%- for field in variant.fields() %}
-                + {{ field|allocation_size_fn }}(value.{%- call kt::field_name(field, loop.index) -%})
-                {%- endfor %}
-            )
-        }
-        {%- endfor %}
-    }
-
-    override fun write(value: {{ type_name }}, buf: ByteBuffer) {
-        when(value) {
-            {%- for variant in e.variants() %}
-            is {{ type_name }}.{{ variant|variant_type_name(ci) }} -> {
-                buf.putInt({{ loop.index }})
-                {%- for field in variant.fields() %}
-                {{ field|write_fn }}(value.{%- call kt::field_name(field, loop.index) -%}, buf)
-                {%- endfor %}
-                Unit
-            }
-            {%- endfor %}
-        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
-    }
 }
 
 {% endif %}

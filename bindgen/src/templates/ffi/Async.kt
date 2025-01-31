@@ -4,8 +4,6 @@ internal const val UNIFFI_RUST_FUTURE_POLL_MAYBE_READY = 1.toByte()
 
 internal val uniffiContinuationHandleMap = UniffiHandleMap<CancellableContinuation<Byte>>()
 
-expect val uniffiRustFutureContinuationCallbackCallback: Any
-
 // FFI type for Rust future continuations
 internal suspend fun<T, F, E: kotlin.Exception> uniffiRustCallAsync(
     rustFuture: Long,
@@ -42,8 +40,6 @@ internal suspend fun<T, F, E: kotlin.Exception> uniffiRustCallAsync(
 }
 
 {%- if ci.has_async_callback_interface_definition() %}
-expect val uniffiForeignFutureFreeImpl: Any
-
 internal inline fun<T> uniffiTraitInterfaceCallAsync(
     crossinline makeCall: suspend () -> T,
     crossinline handleSuccess: (T) -> Unit,

@@ -1,16 +1,17 @@
+{% include "ffi/RustBufferTemplate.kt" %}
 
-internal actual typealias RustBuffer = CPointer<{{ ci.namespace() }}.cinterop.RustBuffer>
+internal typealias RustBuffer = CPointer<{{ ci.namespace() }}.cinterop.RustBuffer>
 
-internal actual var RustBuffer.capacity: Long
+internal var RustBuffer.capacity: Long
     get() = pointed.capacity
     set(value) { pointed.capacity = value }
-internal actual var RustBuffer.len: Long
+internal var RustBuffer.len: Long
     get() = pointed.len
     set(value) { pointed.len = value }
-internal actual var RustBuffer.data: Pointer?
+internal var RustBuffer.data: Pointer?
     get() = pointed.data
     set(value) { pointed.data = value?.reinterpret() }
-internal actual fun RustBuffer.asByteBuffer(): ByteBuffer? {
+internal fun RustBuffer.asByteBuffer(): ByteBuffer? {
     val buffer = ByteBuffer()
     val data = pointed.data?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null
 
@@ -28,7 +29,7 @@ internal actual fun RustBuffer.asByteBuffer(): ByteBuffer? {
     return buffer
 }
 
-internal actual typealias RustBufferByValue = CValue<{{ ci.namespace() }}.cinterop.RustBuffer>
+internal typealias RustBufferByValue = CValue<{{ ci.namespace() }}.cinterop.RustBuffer>
 fun RustBufferByValue(
     capacity: Long,
     len: Long,
@@ -40,28 +41,13 @@ fun RustBufferByValue(
         this.data = data?.reinterpret()
     }
 }
-internal actual var RustBufferByValue.capacity: Long
+internal val RustBufferByValue.capacity: Long
     get() = useContents { capacity }
-    set(value) {
-        useContents {
-            capacity = value
-        }
-    }
-internal actual var RustBufferByValue.len: Long
+internal val RustBufferByValue.len: Long
     get() = useContents { len }
-    set(value) {
-        useContents {
-            len = value
-        }
-    }
-internal actual var RustBufferByValue.data: Pointer?
+internal val RustBufferByValue.data: Pointer?
     get() = useContents { data }
-    set(value) {
-        useContents {
-            data = value?.reinterpret()
-        }
-    }
-internal actual fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
+internal fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
     val buffer = ByteBuffer()
     val data = useContents { data }?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null
     val len = useContents { len }
@@ -79,13 +65,13 @@ internal actual fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
     return buffer   
 }
 
-internal actual object RustBufferHelper
-internal actual fun RustBufferHelper.allocFromByteBuffer(buffer: ByteBuffer): RustBufferByValue
+internal object RustBufferHelper
+internal fun RustBufferHelper.allocFromByteBuffer(buffer: ByteBuffer): RustBufferByValue
      = uniffiRustCall() { status ->
         // Note: need to convert the size to a `Long` value to make this work with JVM.
-        UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_alloc().name() }}(buffer.internal().size.toLong(), status)!!
+        UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_alloc().name() }}(buffer.limit().toLong(), status)!!
     }.also {
-        val size = buffer.internal().size
+        val size = buffer.limit()
         it.useContents {
             val notNullData = data
             checkNotNull(notNullData) { "RustBuffer.alloc() returned null data pointer (size=${size})" }
@@ -97,29 +83,33 @@ internal actual fun RustBufferHelper.allocFromByteBuffer(buffer: ByteBuffer): Ru
         }
     }
 
-internal actual typealias RustBufferByReference = CPointer<{{ ci.namespace() }}.cinterop.RustBufferByReference>
+/**
+ * The equivalent of the `*mut RustBuffer` type.
+ * Required for callbacks taking in an out pointer.
+ *
+ * Size is the sum of all values in the struct.
+ */
+internal typealias RustBufferByReference = CPointer<{{ ci.namespace() }}.cinterop.RustBufferByReference>
 
-internal actual fun RustBufferByReference.setValue(value: RustBufferByValue) {
+internal fun RustBufferByReference.setValue(value: RustBufferByValue) {
     pointed.capacity = value.capacity
     pointed.len = value.len
     pointed.data = value.data?.reinterpret()
 }
-internal actual fun RustBufferByReference.getValue(): RustBufferByValue
+internal fun RustBufferByReference.getValue(): RustBufferByValue
     = pointed.reinterpret<{{ ci.namespace() }}.cinterop.RustBuffer>().readValue()
 
 
-internal actual typealias ForeignBytes = CPointer<{{ ci.namespace() }}.cinterop.ForeignBytes>
-internal actual var ForeignBytes.len: Int
+internal typealias ForeignBytes = CPointer<{{ ci.namespace() }}.cinterop.ForeignBytes>
+internal var ForeignBytes.len: Int
     get() = pointed.len
     set(value) { pointed.len = value }
-internal actual var ForeignBytes.data: Pointer?
+internal var ForeignBytes.data: Pointer?
     get() = pointed.data
     set(value) { pointed.data = value?.reinterpret() }
 
-internal actual typealias ForeignBytesByValue = CValue<{{ ci.namespace() }}.cinterop.ForeignBytes>
-internal actual var ForeignBytesByValue.len: Int
+internal typealias ForeignBytesByValue = CValue<{{ ci.namespace() }}.cinterop.ForeignBytes>
+internal val ForeignBytesByValue.len: Int
     get() = useContents { len }
-    set(value) { TODO("Not implemented yet!") }
-internal actual var ForeignBytesByValue.data: Pointer?
+internal val ForeignBytesByValue.data: Pointer?
     get() = useContents { data }
-    set(value) { TODO("Not implemented yet!") }

@@ -1,3 +1,4 @@
+{% include "ffi/RustBufferTemplate.kt" %}
 
 @Structure.FieldOrder("capacity", "len", "data")
 open class RustBufferStruct(
@@ -20,6 +21,13 @@ open class RustBufferStruct(
     ): RustBuffer(capacity, len, data), Structure.ByValue {
         constructor(): this(0.toLong(), 0.toLong(), null)
     }
+
+    /**
+     * The equivalent of the `*mut RustBuffer` type.
+     * Required for callbacks taking in an out pointer.
+     *
+     * Size is the sum of all values in the struct.
+     */
     class ByReference(
         capacity: Long,
         len: Long,
@@ -29,17 +37,17 @@ open class RustBufferStruct(
     }
 }
 
-actual typealias RustBuffer = RustBufferStruct
-internal actual var RustBuffer.capacity: Long
+typealias RustBuffer = RustBufferStruct
+internal var RustBuffer.capacity: Long
     get() = this.capacity
     set(value) { this.capacity = value }
-internal actual var RustBuffer.len: Long
+internal var RustBuffer.len: Long
     get() = this.len
     set(value) { this.len = value }
-internal actual var RustBuffer.data: Pointer?
+internal var RustBuffer.data: Pointer?
     get() = this.data
     set(value) { this.data = value }
-internal actual fun RustBuffer.asByteBuffer(): ByteBuffer? {
+internal fun RustBuffer.asByteBuffer(): ByteBuffer? {
     val ibuf = data?.getByteBuffer(0L, this.len.toLong()) ?: return null
     // Read java.nio.ByteBuffer into ByteArray
     val arr = ByteArray(ibuf.remaining())
@@ -50,17 +58,14 @@ internal actual fun RustBuffer.asByteBuffer(): ByteBuffer? {
     return buffer
 }
 
-actual typealias RustBufferByValue = RustBufferStruct.ByValue
-internal actual var RustBufferByValue.capacity: Long
+typealias RustBufferByValue = RustBufferStruct.ByValue
+internal val RustBufferByValue.capacity: Long
     get() = this.capacity
-    set(value) { this.capacity = value }
-internal actual var RustBufferByValue.len: Long
+internal val RustBufferByValue.len: Long
     get() = this.len
-    set(value) { this.len = value }
-internal actual var RustBufferByValue.data: Pointer?
+internal val RustBufferByValue.data: Pointer?
     get() = this.data
-    set(value) { this.data = value }
-internal actual fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
+internal fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
     val ibuf = data?.getByteBuffer(0L, this.len.toLong()) ?: return null
     // Read java.nio.ByteBuffer into ByteArray
     val arr = ByteArray(ibuf.remaining())
@@ -72,13 +77,13 @@ internal actual fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
 }
 
 
-internal actual object RustBufferHelper
-internal actual fun RustBufferHelper.allocFromByteBuffer(buffer: ByteBuffer): RustBufferByValue
+internal object RustBufferHelper
+internal fun RustBufferHelper.allocFromByteBuffer(buffer: ByteBuffer): RustBufferByValue
      = uniffiRustCall() { status ->
         // Note: need to convert the size to a `Long` value to make this work with JVM.
-        UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_alloc().name() }}(buffer.internal().size.toLong(), status)!!
+        UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_alloc().name() }}(buffer.limit().toLong(), status)!!
     }.also {
-        val size = buffer.internal().size
+        val size = buffer.limit()
 
         if(it.data == null) {
             throw RuntimeException("{{ ci.ffi_rustbuffer_alloc().name() }}() returned null data pointer (size=${size})")
@@ -92,15 +97,15 @@ internal actual fun RustBufferHelper.allocFromByteBuffer(buffer: ByteBuffer): Ru
         }
     }
 
-internal actual class RustBufferByReference : com.sun.jna.ptr.ByReference(16)
-internal actual fun RustBufferByReference.setValue(value: RustBufferByValue) {
+internal class RustBufferByReference : com.sun.jna.ptr.ByReference(16)
+internal fun RustBufferByReference.setValue(value: RustBufferByValue) {
     // NOTE: The offsets are as they are in the C-like struct.
     val pointer = getPointer()
     pointer.setLong(0, value.capacity)
     pointer.setLong(8, value.len)
     pointer.setPointer(16, value.data)
 }
-internal actual fun RustBufferByReference.getValue(): RustBufferByValue {
+internal fun RustBufferByReference.getValue(): RustBufferByValue {
     val pointer = getPointer()
     val value = RustBufferByValue()
     value.writeField("capacity", pointer.getLong(0))
@@ -125,18 +130,16 @@ internal open class ForeignBytesStruct : Structure() {
     internal class ByValue : ForeignBytes(), Structure.ByValue
 }
 
-internal actual typealias ForeignBytes = ForeignBytesStruct
-internal actual var ForeignBytes.len: Int
+internal typealias ForeignBytes = ForeignBytesStruct
+internal var ForeignBytes.len: Int
     get() = this.len
     set(value) { this.len = value }
-internal actual var ForeignBytes.data: Pointer?
+internal var ForeignBytes.data: Pointer?
     get() = this.data
     set(value) { this.data = value }
 
-internal actual typealias ForeignBytesByValue = ForeignBytesStruct.ByValue
-internal actual var ForeignBytesByValue.len: Int
+internal typealias ForeignBytesByValue = ForeignBytesStruct.ByValue
+internal val ForeignBytesByValue.len: Int
     get() = this.len
-    set(value) { this.len = value }
-internal actual var ForeignBytesByValue.data: Pointer?
+internal val ForeignBytesByValue.data: Pointer?
     get() = this.data
-    set(value) { this.data = value }

@@ -1,4 +1,4 @@
-
+{% include "ffi/ObjectCleanerHelper.kt" %}
 {{- self.add_import("kotlinx.atomicfu.atomic") }}
 {{- self.add_import("kotlinx.atomicfu.AtomicBoolean") }}
 {{- self.add_import("kotlinx.coroutines.Runnable") }}

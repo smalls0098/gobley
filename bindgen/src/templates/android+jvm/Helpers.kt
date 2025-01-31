@@ -1,3 +1,4 @@
+{% include "ffi/Helpers.kt" %}
 
 @Structure.FieldOrder("code", "errorBuf")
 internal open class UniffiRustCallStatusStruct(
@@ -23,26 +24,24 @@ internal open class UniffiRustCallStatusStruct(
     }
 }
 
-internal actual typealias UniffiRustCallStatus = UniffiRustCallStatusStruct.ByReference
-internal actual var UniffiRustCallStatus.code: Byte
+internal typealias UniffiRustCallStatus = UniffiRustCallStatusStruct.ByReference
+internal var UniffiRustCallStatus.code: Byte
     get() = this.code
     set(value) { this.code = value }
-internal actual var UniffiRustCallStatus.errorBuf: RustBufferByValue
+internal var UniffiRustCallStatus.errorBuf: RustBufferByValue
     get() = this.errorBuf
     set(value) { this.errorBuf = value }
 
-internal actual typealias UniffiRustCallStatusByValue = UniffiRustCallStatusStruct.ByValue
-internal actual var UniffiRustCallStatusByValue.code: Byte
+internal typealias UniffiRustCallStatusByValue = UniffiRustCallStatusStruct.ByValue
+internal val UniffiRustCallStatusByValue.code: Byte
     get() = this.code
-    set(value) { this.code = value }
-internal actual var UniffiRustCallStatusByValue.errorBuf: RustBufferByValue
+internal val UniffiRustCallStatusByValue.errorBuf: RustBufferByValue
     get() = this.errorBuf
-    set(value) { this.errorBuf = value }
 
-internal actual object UniffiRustCallStatusHelper
-internal actual fun UniffiRustCallStatusHelper.allocValue(): UniffiRustCallStatusByValue
+internal object UniffiRustCallStatusHelper
+internal fun UniffiRustCallStatusHelper.allocValue(): UniffiRustCallStatusByValue
     = UniffiRustCallStatusByValue()
-internal actual fun <U> UniffiRustCallStatusHelper.withReference(
+internal fun <U> UniffiRustCallStatusHelper.withReference(
     block: (UniffiRustCallStatus) -> U
 ): U {
     val status = UniffiRustCallStatus()

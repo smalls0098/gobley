@@ -53,8 +53,11 @@ import kotlin.coroutines.resume
 
 {% include "PointerHelper.kt" %}
 
+{% include "ffi/ByteBuffer.kt" %}
 {% include "RustBufferTemplate.kt" %}
+{% include "ffi/FfiConverterTemplate.kt" %}
 {% include "Helpers.kt" %}
+{% include "ffi/HandleMap.kt" %}
 {% include "ReferenceHelper.kt" %}
 
 // Contains loading, initialization code,
@@ -65,6 +68,10 @@ import kotlin.coroutines.resume
 {{ type_helper_code }}
 
 {% import "macros.kt" as kt %}
+
+{%- for func in ci.function_definitions() %}
+{%- include "ffi/TopLevelFunctionTemplate.kt" %}
+{%- endfor %}
 
 // Async support
 {%- if ci.has_async_fns() %}
