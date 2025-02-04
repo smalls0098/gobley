@@ -104,7 +104,7 @@
 {% include "ffi/CustomTypeTemplate.kt" %}
 
 {%- when Type::External { module_path, name, namespace, kind, tagged } %}
-{% include "ffi/ExternalTypeTemplate.kt" %}
+{% include "ExternalTypeTemplate.kt" %}
 
 {%- else %}
 {%- endmatch %}

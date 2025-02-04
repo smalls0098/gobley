@@ -28,7 +28,7 @@ import kotlin.coroutines.resume
 
 {% include "PointerHelper.kt" %}
 
-{% include "ffi/ByteBuffer.kt" %}
+{% include "ByteBuffer.kt" %}
 {% include "RustBufferTemplate.kt" %}
 {% include "ffi/FfiConverterTemplate.kt" %}
 {% include "Helpers.kt" %}

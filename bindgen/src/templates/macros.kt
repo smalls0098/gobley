@@ -5,6 +5,13 @@
 // passed to rust via `arg_list_lowered`
 #}
 
+{%- macro check_rust_buffer_length(length) -%}
+    require({{ length }} <= Int.MAX_VALUE) {
+        val length = {{ length }}
+        "cannot handle RustBuffer longer than Int.MAX_VALUE bytes: length is $length"
+    }
+{%- endmacro %}
+
 {%- macro to_ffi_call(func) -%}
     {%- if func.takes_self() %}
     callWithPointer {

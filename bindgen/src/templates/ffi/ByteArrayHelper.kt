@@ -2,7 +2,7 @@
 public object FfiConverterByteArray: FfiConverterRustBuffer<ByteArray> {
     override fun read(buf: ByteBuffer): ByteArray {
         val len = buf.getInt()
-        val byteArr = buf.get(len.toLong())
+        val byteArr = buf.get(len)
         return byteArr
     }
     override fun allocationSize(value: ByteArray): ULong {

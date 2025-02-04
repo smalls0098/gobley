@@ -34,18 +34,22 @@ import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.set
 import kotlinx.cinterop.staticCFunction
 import kotlinx.cinterop.useContents
+import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.cValue
 import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.plus
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.toCPointer
+import kotlinx.cinterop.usePinned
 import kotlin.experimental.ExperimentalNativeApi
 import kotlinx.cinterop.nativeHeap
 import kotlinx.cinterop.value
 import kotlinx.cinterop.CFunction
 import kotlinx.cinterop.write
 import kotlin.coroutines.resume
+import platform.posix.memcpy
 
 {%- for req in self.imports() %}
 {{ req.render() }}
@@ -53,7 +57,7 @@ import kotlin.coroutines.resume
 
 {% include "PointerHelper.kt" %}
 
-{% include "ffi/ByteBuffer.kt" %}
+{% include "ByteBuffer.kt" %}
 {% include "RustBufferTemplate.kt" %}
 {% include "ffi/FfiConverterTemplate.kt" %}
 {% include "Helpers.kt" %}

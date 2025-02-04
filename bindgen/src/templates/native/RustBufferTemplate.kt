@@ -12,21 +12,11 @@ internal var RustBuffer.data: Pointer?
     get() = pointed.data
     set(value) { pointed.data = value?.reinterpret() }
 internal fun RustBuffer.asByteBuffer(): ByteBuffer? {
-    val buffer = ByteBuffer()
-    val data = pointed.data?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null
-
-    if (pointed.len < 0L)
-        throw IllegalStateException("Trying to call asByteBuffer with negative length")
-
-    if (pointed.len == 0L)
-        return buffer
-
-    // Copy over bytes 1 by 1
-    for (i in 0..len - 1) {
-        buffer.put(data[i])
-    }
-    
-    return buffer
+    {% call kt::check_rust_buffer_length("pointed.len") %}
+    return ByteBuffer(
+        pointed.data?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null,
+        pointed.len.toInt(),
+    )
 }
 
 internal typealias RustBufferByValue = CValue<{{ ci.namespace() }}.cinterop.RustBuffer>
@@ -48,40 +38,12 @@ internal val RustBufferByValue.len: Long
 internal val RustBufferByValue.data: Pointer?
     get() = useContents { data }
 internal fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
-    val buffer = ByteBuffer()
-    val data = useContents { data }?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null
-    val len = useContents { len }
-    if (len < 0L)
-        throw IllegalStateException("Trying to call asByteBuffer with negative length")
-
-    if (len == 0L)
-        return buffer
-
-    // Copy over bytes 1 by 1
-    for (i in 0..<len) {
-        buffer.put(data[i])
-    }
-    
-    return buffer   
+    {% call kt::check_rust_buffer_length("len") %}
+    return ByteBuffer(
+        data?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null,
+        len.toInt(),
+    )
 }
-
-internal object RustBufferHelper
-internal fun RustBufferHelper.allocFromByteBuffer(buffer: ByteBuffer): RustBufferByValue
-     = uniffiRustCall() { status ->
-        // Note: need to convert the size to a `Long` value to make this work with JVM.
-        UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_alloc().name() }}(buffer.limit().toLong(), status)!!
-    }.also {
-        val size = buffer.limit()
-        it.useContents {
-            val notNullData = data
-            checkNotNull(notNullData) { "RustBuffer.alloc() returned null data pointer (size=${size})" }
-
-           for (i in 0..<size) {
-                notNullData[i.toInt()] = buffer.get().toUByte()
-           }
-
-        }
-    }
 
 /**
  * The equivalent of the `*mut RustBuffer` type.

@@ -29,9 +29,14 @@ interface FfiConverter<KotlinType, FfiType> {
     // returns are always serialized into a `RustBuffer` regardless of their
     // normal FFI type.
     fun lowerIntoRustBuffer(value: KotlinType): RustBufferByValue {
-        val bbuf = ByteBuffer()
+        val rbuf = RustBufferHelper.allocValue(allocationSize(value))
+        val bbuf = rbuf.asByteBuffer()!!
         write(value, bbuf)
-        return RustBufferHelper.allocFromByteBuffer(bbuf)
+        return RustBufferByValue(
+            capacity = rbuf.capacity,
+            len = bbuf.position().toLong(),
+            data = rbuf.data,
+        )
     }
 
     // Lift a value from a `RustBuffer`.

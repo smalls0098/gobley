@@ -48,14 +48,8 @@ internal var RustBuffer.data: Pointer?
     get() = this.data
     set(value) { this.data = value }
 internal fun RustBuffer.asByteBuffer(): ByteBuffer? {
-    val ibuf = data?.getByteBuffer(0L, this.len.toLong()) ?: return null
-    // Read java.nio.ByteBuffer into ByteArray
-    val arr = ByteArray(ibuf.remaining())
-    ibuf.get(arr)
-    // Put ByteArray into common ByteBuffer
-    val buffer = ByteBuffer()
-    buffer.put(arr)
-    return buffer
+    {% call kt::check_rust_buffer_length("this.len") %}
+    return ByteBuffer(data?.getByteBuffer(0L, this.len) ?: return null)
 }
 
 typealias RustBufferByValue = RustBufferStruct.ByValue
@@ -66,36 +60,9 @@ internal val RustBufferByValue.len: Long
 internal val RustBufferByValue.data: Pointer?
     get() = this.data
 internal fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
-    val ibuf = data?.getByteBuffer(0L, this.len.toLong()) ?: return null
-    // Read java.nio.ByteBuffer into ByteArray
-    val arr = ByteArray(ibuf.remaining())
-    ibuf.get(arr)
-    // Put ByteArray into common ByteBuffer
-    val buffer = ByteBuffer()
-    buffer.put(arr)
-    return buffer
+    {% call kt::check_rust_buffer_length("this.len") %}
+    return ByteBuffer(data?.getByteBuffer(0L, this.len) ?: return null)
 }
-
-
-internal object RustBufferHelper
-internal fun RustBufferHelper.allocFromByteBuffer(buffer: ByteBuffer): RustBufferByValue
-     = uniffiRustCall() { status ->
-        // Note: need to convert the size to a `Long` value to make this work with JVM.
-        UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_alloc().name() }}(buffer.limit().toLong(), status)!!
-    }.also {
-        val size = buffer.limit()
-
-        if(it.data == null) {
-            throw RuntimeException("{{ ci.ffi_rustbuffer_alloc().name() }}() returned null data pointer (size=${size})")
-        }
-
-        var readPos = 0L
-        it.writeField("len", size.toLong())
-        // Loop until the buffer is completed read, okio reads max 8192 bytes
-        while (readPos < size) {
-            readPos += buffer.internal().read(it.data!!.getByteBuffer(readPos, size - readPos))
-        }
-    }
 
 internal class RustBufferByReference : com.sun.jna.ptr.ByReference(16)
 internal fun RustBufferByReference.setValue(value: RustBufferByValue) {
