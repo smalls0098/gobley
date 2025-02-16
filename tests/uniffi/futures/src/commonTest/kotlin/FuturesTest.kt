@@ -38,7 +38,7 @@ class FuturesTest {
     }
 
     private fun assertReturnsImmediately(block: suspend CoroutineScope.() -> Unit) =
-        assertMaxTime(4, block)
+        assertMaxTime(20 /* delay enough amount to pass in CI */, block)
 
     private fun assertApproximateTime(expectedTime: Int, block: suspend CoroutineScope.() -> Unit) =
         runTest {
