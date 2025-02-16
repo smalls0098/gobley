@@ -9,19 +9,27 @@
 //
 // The easiest way to ensure this method is called is to use the `.use`
 // helper method to execute a block and destroy the object at the end.
+@OptIn(ExperimentalStdlibApi::class)
 interface Disposable : AutoCloseable {
     fun destroy()
     override fun close() = destroy()
     companion object {
-        fun destroy(vararg args: Any?) {
-            args.filterIsInstance<Disposable>()
-                .forEach(Disposable::destroy)
+        internal fun destroy(vararg args: Any?) {
+            for (arg in args) {
+                if (arg is Disposable) {
+                    arg.destroy()
+                }
+            }
         }
     }
 }
 
-inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
-    try {
+@OptIn(kotlin.contracts.ExperimentalContracts::class)
+inline fun <T : Disposable?, R> T.use(block: (T) -> R): R {
+    kotlin.contracts.contract {
+        callsInPlace(block, kotlin.contracts.InvocationKind.EXACTLY_ONCE)
+    }
+    return try {
         block(this)
     } finally {
         try {
@@ -31,6 +39,7 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
             // swallow
         }
     }
+}
 
 /** Used to instantiate an interface without an actual pointer, for fakes in tests, mostly. */
 object NoPointer
@@ -79,17 +88,3 @@ object NoPointer
 {%- else %}
 {%- endmatch %}
 {%- endfor %}
-
-{%- if ci.has_async_fns() %}
-{# Import types needed for async support #}
-{{ self.add_import("kotlin.coroutines.resume") }}
-{{ self.add_import("kotlinx.coroutines.launch") }}
-{{ self.add_import("kotlinx.coroutines.suspendCancellableCoroutine") }}
-{{ self.add_import("kotlinx.coroutines.CancellableContinuation") }}
-{{ self.add_import("kotlinx.coroutines.DelicateCoroutinesApi") }}
-{{ self.add_import("kotlinx.coroutines.Job") }}
-{{ self.add_import("kotlinx.coroutines.GlobalScope") }}
-{{ self.add_import("kotlinx.coroutines.withContext") }}
-{{ self.add_import("kotlinx.coroutines.IO") }}
-{{ self.add_import("kotlinx.coroutines.Dispatchers") }}
-{%- endif %}

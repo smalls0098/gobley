@@ -1,5 +1,5 @@
 
-public object FfiConverterShort: FfiConverter<Short, Short> {
+object FfiConverterShort: FfiConverter<Short, Short> {
     override fun lift(value: Short): Short {
         return value
     }

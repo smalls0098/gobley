@@ -1,5 +1,5 @@
 
-internal actual typealias Pointer = com.sun.jna.Pointer
-actual val NullPointer: Pointer? = com.sun.jna.Pointer.NULL
-actual fun getPointerNativeValue(ptr: Pointer): Long = Pointer.nativeValue(ptr)
-actual fun kotlin.Long.toPointer() = com.sun.jna.Pointer(this)
+internal typealias Pointer = com.sun.jna.Pointer
+internal val NullPointer: Pointer? = com.sun.jna.Pointer.NULL
+internal fun getPointerNativeValue(ptr: Pointer): Long = Pointer.nativeValue(ptr)
+internal fun kotlin.Long.toPointer() = com.sun.jna.Pointer(this)

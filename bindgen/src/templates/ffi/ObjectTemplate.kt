@@ -13,7 +13,7 @@ actual open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ inter
 actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
 {%- endif %}
 
-    actual constructor(pointer: Pointer) {
+    constructor(pointer: Pointer) {
         this.pointer = pointer
         this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(pointer))
     }
@@ -23,7 +23,6 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
      * attempt to actually use an object constructed this way will fail as there is no
      * connected Rust object.
      */
-    @Suppress("UNUSED_PARAMETER")
     actual constructor(noPointer: NoPointer) {
         this.pointer = null
         this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(pointer))
@@ -35,14 +34,16 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
     // Note no constructor generated for this object as it is async.
     {%-     else %}
     {%- call kt::docstring(cons, 4) %}
-    actual constructor({% call kt::arg_list(cons, false) -%}) :
-        this({% call kt::to_ffi_call(cons) %})
+
+    actual constructor({% call kt::arg_list(cons, false) -%}) : this(
+        {% call kt::to_ffi_call(cons, 8) %}
+    )
     {%-     endif %}
     {%- when None %}
     {%- endmatch %}
 
-    actual protected val pointer: Pointer?
-    actual protected val cleanable: UniffiCleaner.Cleanable
+    protected val pointer: Pointer?
+    protected val cleanable: UniffiCleaner.Cleanable
 
     private val wasDestroyed: kotlinx.atomicfu.AtomicBoolean = kotlinx.atomicfu.atomic(false)
     private val callCounter: kotlinx.atomicfu.AtomicLong = kotlinx.atomicfu.atomic(1L)
@@ -73,7 +74,7 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
         synchronized { this.destroy() }
     }
 
-    internal actual inline fun <R> callWithPointer(block: (ptr: Pointer) -> R): R {
+    internal inline fun <R> callWithPointer(block: (ptr: Pointer) -> R): R {
         // Check and increment the call counter, to keep the object alive.
         // This needs a compare-and-set retry loop in case of concurrent updates.
         do {
@@ -102,38 +103,38 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.{{ obj.ffi_object_free().name() }}(ptr, status)!!
+                    UniffiLib.INSTANCE.{{ obj.ffi_object_free().name() }}(ptr, status)
                 }
             }
         }
     }
 
-    actual fun uniffiClonePointer(): Pointer {
-        return uniffiRustCall() { status ->
+    fun uniffiClonePointer(): Pointer {
+        return uniffiRustCall { status ->
             UniffiLib.INSTANCE.{{ obj.ffi_object_clone().name() }}(pointer!!, status)!!
         }
     }
 
     {% for meth in obj.methods() -%}
-    {%- call kt::func_decl_with_body("actual override", meth, 4) %}
+    {%- call kt::func_decl_with_body("actual override", meth, 4) -%}
     {% endfor %}
 
     {%- for tm in obj.uniffi_traits() %}
     {%-     match tm %}
     {%         when UniffiTrait::Display { fmt } %}
     actual override fun toString(): String {
-        return {{ fmt.return_type().unwrap()|lift_fn }}({% call kt::to_ffi_call(fmt) %})
+        return {{ fmt.return_type().unwrap()|lift_fn }}({% call kt::to_ffi_call(fmt, 8) %})
     }
     {%         when UniffiTrait::Eq { eq, ne } %}
     {# only equals used #}
     actual override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is {{ impl_class_name}}) return false
-        return {{ eq.return_type().unwrap()|lift_fn }}({% call kt::to_ffi_call(eq) %})
+        return {{ eq.return_type().unwrap()|lift_fn }}({% call kt::to_ffi_call(eq, 8) %})
     }
     {%         when UniffiTrait::Hash { hash } %}
     actual override fun hashCode(): Int {
-        return {{ hash.return_type().unwrap()|lift_fn }}({%- call kt::to_ffi_call(hash) %}).toInt()
+        return {{ hash.return_type().unwrap()|lift_fn }}({%- call kt::to_ffi_call(hash, 8) %}).toInt()
     }
     {%-         else %}
     {%-     endmatch %}
@@ -143,7 +144,7 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
     {% if !obj.alternate_constructors().is_empty() -%}
     actual companion object {
         {% for cons in obj.alternate_constructors() -%}
-        {% call kt::func_decl_with_body("actual", cons, 4) %}
+        {%- call kt::func_decl_with_body("actual", cons, 8) %}
         {% endfor %}
     }
     {% else %}
@@ -164,42 +165,40 @@ object {{ impl_class_name }}ErrorHandler : UniffiRustCallStatusErrorHandler<{{ i
 }
 {% endif %}
 
-{% macro converter_type(obj) %}
-{% if obj.has_callback_interface() %}
+{% macro converter_type(obj) -%}
+{%- if obj.has_callback_interface() -%}
 {{ interface_name }}
-{% else %}
+{%- else -%}
 {{ impl_class_name }}
-{% endif %}
-{% endmacro %}
+{%- endif -%}
+{%- endmacro %}
 
-public object {{ ffi_converter_name }}: FfiConverter<{%- call converter_type(obj) -%}, Pointer> {
+object {{ ffi_converter_name }}: FfiConverter<{%- call converter_type(obj) -%}, Pointer> {
     {%- if obj.has_callback_interface() %}
     internal val handleMap = UniffiHandleMap<{%- call converter_type(obj) -%}>()
     {%- endif %}
 
-    override fun lower(value: {%- call converter_type(obj) -%}): Pointer {
+    override fun lower(value: {% call converter_type(obj) %}): Pointer {
         {%- if obj.has_callback_interface() %}
         return handleMap.insert(value).toPointer()
         {%- else %}
-        val obj = value as {{ impl_class_name }}
-        return obj.uniffiClonePointer()
+        return value.uniffiClonePointer()
         {%- endif %}
-        }
+    }
 
-
-    override fun lift(value: Pointer): {%- call converter_type(obj) -%} {
+    override fun lift(value: Pointer): {% call converter_type(obj) %} {
         return {{ impl_class_name }}(value)
     }
 
-    override fun read(buf: ByteBuffer): {%- call converter_type(obj) -%} {
+    override fun read(buf: ByteBuffer): {% call converter_type(obj) %} {
         // The Rust code always writes pointers as 8 bytes, and will
         // fail to compile if they don't fit.
         return lift(buf.getLong().toPointer())
     }
 
-    override fun allocationSize(value: {%- call converter_type(obj) -%}) = 8UL
+    override fun allocationSize(value: {% call converter_type(obj) %}) = 8UL
 
-    override fun write(value: {%- call converter_type(obj) -%}, buf: ByteBuffer) {
+    override fun write(value: {% call converter_type(obj) %}, buf: ByteBuffer) {
         // The Rust code always expects pointers written as 8 bytes,
         // and will fail to compile if they don't fit.
         buf.putLong(getPointerNativeValue(lower(value)))

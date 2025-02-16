@@ -1,8 +1,7 @@
 {%- call kt::docstring_value(ci.namespace_docstring(), 0) %}
 
-@file:Suppress("NAME_SHADOWING","ACTUAL_WITHOUT_EXPECT", "ACTUAL_TYPE_ALIAS_WITH_USE_SITE_VARIANCE", "ACTUAL_TYPE_ALIAS_WITH_COMPLEX_SUBSTITUTION", "ACTUAL_TYPE_ALIAS_TO_CLASS_WITH_DECLARATION_SITE_VARIANCE", "INCOMPATIBLE_MATCHING")
+@file:Suppress("RemoveRedundantBackticks")
 @file:OptIn(ExperimentalForeignApi::class)
-
 
 package {{ config.package_name() }}
 
@@ -61,7 +60,7 @@ import platform.posix.memcpy
 {% include "RustBufferTemplate.kt" %}
 {% include "ffi/FfiConverterTemplate.kt" %}
 {% include "Helpers.kt" %}
-{% include "ffi/HandleMap.kt" %}
+{% include "HandleMap.kt" %}
 {% include "ReferenceHelper.kt" %}
 
 // Contains loading, initialization code,

@@ -9,4 +9,4 @@
 
 {% include "CallbackInterfaceImpl.kt" %}
 
-object {{ ffi_converter_name }}: FfiConverterCallbackInterface<{{ interface_name }}>()
+object {{ ffi_converter_name }} : FfiConverterCallbackInterface<{{ interface_name }}>()

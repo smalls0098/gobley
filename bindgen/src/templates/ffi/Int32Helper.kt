@@ -1,5 +1,5 @@
 
-public object FfiConverterInt: FfiConverter<Int, Int> {
+object FfiConverterInt: FfiConverter<Int, Int> {
     override fun lift(value: Int): Int {
         return value
     }

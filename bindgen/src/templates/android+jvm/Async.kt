@@ -1,8 +1,8 @@
 {% include "ffi/Async.kt" %}
 
 object uniffiRustFutureContinuationCallbackCallback: UniffiRustFutureContinuationCallback {
-    override fun callback(handle: Long, pollResult: Byte) {
-        uniffiContinuationHandleMap.remove(handle).resume(pollResult)
+    override fun callback(data: Long, pollResult: Byte) {
+        uniffiContinuationHandleMap.remove(data).resume(pollResult)
     }
 }
 

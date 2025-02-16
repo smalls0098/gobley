@@ -22,7 +22,7 @@ object {{ e|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
     }
 }
 
-{% else %}
+{%- else %}
 
 object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}>{
     override fun read(buf: ByteBuffer): {{ type_name }} {
@@ -67,4 +67,4 @@ object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}>{
     }
 }
 
-{% endif %}
+{%- endif %}

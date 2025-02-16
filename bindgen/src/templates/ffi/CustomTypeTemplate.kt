@@ -2,7 +2,7 @@
 {%- match config.custom_types.get(name.as_str())  %}
 {%- when None %}
 
-public typealias {{ ffi_converter_name }} = {{ builtin|ffi_converter_name }}
+typealias {{ ffi_converter_name }} = {{ builtin|ffi_converter_name }}
 
 {%- when Some with (config) %}
 
@@ -18,7 +18,7 @@ public typealias {{ ffi_converter_name }} = {{ builtin|ffi_converter_name }}
 {%- else %}
 {%- endmatch %}
 
-public object {{ ffi_converter_name }}: FfiConverter<{{ type_name }}, {{ ffi_type_name }}> {
+object {{ ffi_converter_name }}: FfiConverter<{{ type_name }}, {{ ffi_type_name }}> {
     override fun lift(value: {{ ffi_type_name }}): {{ type_name }} {
         val builtinValue = {{ builtin|lift_fn }}(value)
         return {{ config.into_custom.render("builtinValue") }}

@@ -2,7 +2,7 @@
 {{ self.add_import("kotlin.time.Duration.Companion.nanoseconds") }}
 {{ self.add_import("kotlin.time.Duration.Companion.seconds") }}
 
-public object FfiConverterDuration: FfiConverterRustBuffer<kotlin.time.Duration> {
+object FfiConverterDuration: FfiConverterRustBuffer<kotlin.time.Duration> {
     override fun read(buf: ByteBuffer): kotlin.time.Duration {
         // Type mismatch (should be u64) but we check for overflow/underflow below
         val secs = buf.getLong()

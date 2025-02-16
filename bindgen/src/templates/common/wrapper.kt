@@ -1,7 +1,6 @@
 {%- call kt::docstring_value(ci.namespace_docstring(), 0) %}
 
-@file:Suppress("NAME_SHADOWING","ACTUAL_WITHOUT_EXPECT", "ACTUAL_TYPE_ALIAS_WITH_USE_SITE_VARIANCE", "ACTUAL_TYPE_ALIAS_WITH_COMPLEX_SUBSTITUTION", "ACTUAL_TYPE_ALIAS_TO_CLASS_WITH_DECLARATION_SITE_VARIANCE", "INCOMPATIBLE_MATCHING", "NO_ACTUAL_FOR_EXPECT")
-@file:OptIn(ExperimentalStdlibApi::class)
+@file:Suppress("RemoveRedundantBackticks")
 
 package {{ config.package_name() }}
 
@@ -17,9 +16,10 @@ package {{ config.package_name() }}
 // compile the Rust component. The easiest way to ensure this is to bundle the Kotlin
 // helpers directly inline like we're doing here.
 
-import kotlin.jvm.JvmField
+{%- for req in self.imports() %}
+{{ req.render() }}
+{%- endfor %}
 
-{% include "PointerHelper.kt" %}
 {% include "Helpers.kt" %}
 
 // Public interface members begin here.

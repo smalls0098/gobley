@@ -6,15 +6,21 @@
 // Put the implementation in an object so we don't pollute the top-level namespace
 internal object {{ trait_impl }} {
     {%- for (ffi_callback, meth) in vtable_methods.iter() %}
-    internal fun {{ meth.name()|var_name }}({%- call kt::arg_list_ffi_decl(ffi_callback) -%})
-    {%- if let Some(return_type) = ffi_callback.return_type() %}
-        : {{ return_type|ffi_type_name_by_value }},
+    internal fun {{ meth.name()|var_name }}(
+        {%- call kt::arg_list_ffi_decl(ffi_callback, 8) %}
+    )
+    {%- if let Some(return_type) = ffi_callback.return_type() -%}
+        : {{ return_type|ffi_type_name_by_value }}
     {%- endif %} {
         val uniffiObj = {{ ffi_converter_name }}.handleMap.get(uniffiHandle)
         val makeCall = {% if meth.is_async() %}suspend {% endif %}{ ->
             uniffiObj.{{ meth.name()|fn_name() }}(
                 {%- for arg in meth.arguments() %}
+                {%- if arg|as_ffi_type|need_non_null_assertion %}
                 {{ arg|lift_fn }}({{ arg.name()|var_name }}!!),
+                {%- else %}
+                {{ arg|lift_fn }}({{ arg.name()|var_name }}),
+                {%- endif -%}
                 {%- endfor %}
             )
         }
@@ -22,9 +28,15 @@ internal object {{ trait_impl }} {
 
         {%- match meth.return_type() %}
         {%- when Some(return_type) %}
-        val writeReturn = { value: {{ return_type|type_name(ci) }} -> uniffiOutReturn.setValue({{ return_type|lower_fn }}(value)) }
+        val writeReturn = { uniffiResultValue: {{ return_type|type_name(ci) }} ->
+            uniffiOutReturn.setValue({{ return_type|lower_fn }}(uniffiResultValue))
+        }
         {%- when None %}
-        val writeReturn = { _: Unit -> Unit }
+        val writeReturn = { _: Unit ->
+            @Suppress("UNUSED_EXPRESSION")
+            uniffiOutReturn
+            Unit
+        }
         {%- endmatch %}
 
         {%- match meth.throws_type() %}
@@ -35,8 +47,7 @@ internal object {{ trait_impl }} {
             uniffiCallStatus,
             makeCall,
             writeReturn,
-            { e: {{error_type|type_name(ci) }} -> {{ error_type|lower_fn }}(e) }
-        )
+        ) { e: {{error_type|type_name(ci) }} -> {{ error_type|lower_fn }}(e) }
         {%- endmatch %}
 
         {%- else %}
@@ -86,39 +97,45 @@ internal object {{ trait_impl }} {
                 makeCall,
                 uniffiHandleSuccess,
                 uniffiHandleError,
-                { e: {{error_type|type_name(ci) }} -> {{ error_type|lower_fn }}(e) }
-            )
+            ) { e: {{error_type|type_name(ci) }} -> {{ error_type|lower_fn }}(e) }
             {%- endmatch %}
         )
         {%- endif %}
     }
-    {%- endfor %}
+    {% endfor %}
     internal fun uniffiFree(handle: Long) {
         {{ ffi_converter_name }}.handleMap.remove(handle)
     }
 
     internal val vtable = nativeHeap.alloc<{{ci.namespace()}}.cinterop.{{ vtable|ffi_type_name }}> {
         {%- for (ffi_callback, meth) in vtable_methods.iter() %}
+        {% if ffi_callback|ffi_callback_needs_casting_native -%}
+        @Suppress("UNCHECKED_CAST")
+        {% endif -%}
         this.{{ meth.name()|var_name }} = staticCFunction {
-            {%- for arg in ffi_callback.arguments() -%}
+            {%- for arg in ffi_callback.arguments() %}
             {{ arg.name().borrow()|var_name }}: {{ arg.type_().borrow()|ffi_type_name_by_value }},
             {%- endfor -%}
-            {%- if ffi_callback.has_rust_call_status_arg() -%}
+            {%- if ffi_callback.has_rust_call_status_arg() %}
             uniffiCallStatus: UniffiRustCallStatus,
-            {%- endif -%} ->
+            {%- endif %}
+            ->
             {{ trait_impl }}.{{ meth.name()|var_name() }}(
-                {%- for arg in ffi_callback.arguments() -%}
+                {%- for arg in ffi_callback.arguments() %}
                 {{ arg.name().borrow()|var_name }},
                 {%- endfor -%}
-                {%- if ffi_callback.has_rust_call_status_arg() -%}
+                {%- if ffi_callback.has_rust_call_status_arg() %}
                 uniffiCallStatus,
-                {%- endif -%}
+                {%- endif %}
             )
-        } as {{ ci.namespace() }}.cinterop.{{ ffi_callback.name()|ffi_callback_name }}
+        }
+        {%- if ffi_callback|ffi_callback_needs_casting_native -%}
+        {{ "" }} as {{ ci.namespace() }}.cinterop.{{ ffi_callback.name()|ffi_callback_name }}
+        {%- endif -%}
         {%- endfor %}
         this.uniffiFree = staticCFunction { handle: Long ->
             {{ trait_impl }}.uniffiFree(handle)
-        } as {{ ci.namespace() }}.cinterop.{{ "CallbackInterfaceFree"|ffi_callback_name }}
+        }
     }.ptr
 
     internal fun register(lib: UniffiLib) {

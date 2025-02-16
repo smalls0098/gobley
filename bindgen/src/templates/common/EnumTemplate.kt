@@ -41,19 +41,18 @@ sealed class {{ type_name }}{% if contains_object_references %}: Disposable {% e
     data class {{ variant|variant_type_name(ci) }}(
         {%- for field in variant.fields() -%}
         {%- call kt::docstring(field, 8) %}
-        val {% call kt::field_name(field, loop.index) %}: {{ field|type_name(ci) }}{% if loop.last %}{% else %}, {% endif %}
-        {%- endfor -%}
+        val {% call kt::field_name(field, loop.index) %}: {{ field|type_name(ci) }},
+        {%- endfor %}
     ) : {{ type_name }}() {
-        {% if contains_object_references %}
-        @Suppress("UNNECESSARY_SAFE_CALL") // codegen is much simpler if we unconditionally emit safe calls here
+        {%- if contains_object_references %}
         override fun destroy() {
-            {%- if variant.has_fields() %}
-            {% call kt::destroy_fields(variant) %}
-            {% else -%}
+            {%- if variant.has_fields() -%}
+            {%- call kt::destroy_fields(variant, 12) -%}
+            {%- else %}
             // Nothing to destroy
             {%- endif %}
         }
-        {% endif %}
+        {%- endif %}
     }
     {%- endif %}
     {% endfor %}

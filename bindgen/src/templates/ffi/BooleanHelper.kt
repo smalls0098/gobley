@@ -1,5 +1,5 @@
 
-public object FfiConverterBoolean: FfiConverter<Boolean, Byte> {
+object FfiConverterBoolean: FfiConverter<Boolean, Byte> {
     override fun lift(value: Byte): Boolean {
         return value.toInt() != 0
     }

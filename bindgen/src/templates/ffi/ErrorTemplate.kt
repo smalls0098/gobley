@@ -9,16 +9,15 @@ object {{ type_name }}ErrorHandler : UniffiRustCallStatusErrorHandler<{{ type_na
 
 object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}> {
     override fun read(buf: ByteBuffer): {{ type_name }} {
-        {% if e.is_flat() %}
-            return when(buf.getInt()) {
+        {%- if e.is_flat() %}
+        return when (buf.getInt()) {
             {%- for variant in e.variants() %}
             {{ loop.index }} -> {{ type_name }}.{{ variant|error_variant_name }}({{ Type::String.borrow()|read_fn }}(buf))
             {%- endfor %}
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
         }
-        {% else %}
-
-        return when(buf.getInt()) {
+        {%- else %}
+        return when (buf.getInt()) {
             {%- for variant in e.variants() %}
             {{ loop.index }} -> {{ type_name }}.{{ variant|error_variant_name }}({% if variant.has_fields() %}
                 {% for field in variant.fields() -%}
@@ -35,7 +34,7 @@ object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}> {
         {%- if e.is_flat() %}
         return 4UL
         {%- else %}
-        return when(value) {
+        return when (value) {
             {%- for variant in e.variants() %}
             is {{ type_name }}.{{ variant|error_variant_name }} -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
@@ -50,7 +49,7 @@ object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}> {
     }
 
     override fun write(value: {{ type_name }}, buf: ByteBuffer) {
-        when(value) {
+        when (value) {
             {%- for variant in e.variants() %}
             is {{ type_name }}.{{ variant|error_variant_name }} -> {
                 buf.putInt({{ loop.index }})
@@ -62,5 +61,4 @@ object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}> {
             {%- endfor %}
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
     }
-
 }

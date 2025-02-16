@@ -7,7 +7,7 @@ internal val uniffiContinuationHandleMap = UniffiHandleMap<CancellableContinuati
 // FFI type for Rust future continuations
 internal suspend fun<T, F, E: kotlin.Exception> uniffiRustCallAsync(
     rustFuture: Long,
-    pollFunc: (Long, Any, Long) -> Unit,
+    pollFunc: (Long, UniffiRustFutureContinuationCallback, Long) -> Unit,
     completeFunc: (Long, UniffiRustCallStatus) -> F,
     freeFunc: (Long) -> Unit,
     cancelFunc: (Long) -> Unit,
@@ -31,7 +31,7 @@ internal suspend fun<T, F, E: kotlin.Exception> uniffiRustCallAsync(
             } while (pollResult != UNIFFI_RUST_FUTURE_POLL_READY);
 
             return@withContext liftFunc(
-                uniffiRustCallWithError(errorHandler, { status -> completeFunc(rustFuture, status) })
+                uniffiRustCallWithError(errorHandler) { status -> completeFunc(rustFuture, status) }
             )
         } finally {
             freeFunc(rustFuture)

@@ -22,7 +22,7 @@ object {{ rec|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
 
     override fun write(value: {{ type_name }}, buf: ByteBuffer) {
         {%- for field in rec.fields() %}
-            {{ field|write_fn }}(value.{{ field.name()|var_name }}, buf)
+        {{ field|write_fn }}(value.{{ field.name()|var_name }}, buf)
         {%- endfor %}
     }
 }

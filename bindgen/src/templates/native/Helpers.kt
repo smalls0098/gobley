@@ -23,14 +23,14 @@ internal val UniffiRustCallStatusByValue.code: Byte
 internal val UniffiRustCallStatusByValue.errorBuf: RustBufferByValue
     get() = useContents { errorBuf.readValue() }
 
-internal object UniffiRustCallStatusHelper
-internal fun UniffiRustCallStatusHelper.allocValue(): UniffiRustCallStatusByValue
-    = cValue<{{ ci.namespace() }}.cinterop.UniffiRustCallStatus>()
-internal fun <U> UniffiRustCallStatusHelper.withReference(
-    block: (UniffiRustCallStatus) -> U
-): U {
-    return memScoped {
-        val status = alloc<{{ ci.namespace() }}.cinterop.UniffiRustCallStatus>()
-        block(status.ptr)
+internal object UniffiRustCallStatusHelper {
+    fun allocValue() = cValue<{{ ci.namespace() }}.cinterop.UniffiRustCallStatus>()
+    fun <U> withReference(
+        block: (UniffiRustCallStatus) -> U
+    ): U {
+        return memScoped {
+            val status = alloc<{{ ci.namespace() }}.cinterop.UniffiRustCallStatus>()
+            block(status.ptr)
+        }
     }
 }

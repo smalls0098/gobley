@@ -1,5 +1,5 @@
 
-public object FfiConverterByteArray: FfiConverterRustBuffer<ByteArray> {
+object FfiConverterByteArray: FfiConverterRustBuffer<ByteArray> {
     override fun read(buf: ByteBuffer): ByteArray {
         val len = buf.getInt()
         val byteArr = buf.get(len)

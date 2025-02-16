@@ -22,13 +22,9 @@ internal interface {{ callback.name()|ffi_callback_name }}: com.sun.jna.Callback
 @Structure.FieldOrder({% for field in ffi_struct.fields() %}"{{ field.name()|var_name_raw }}"{% if !loop.last %}, {% endif %}{% endfor %})
 internal open class {{ ffi_struct.name()|ffi_struct_name }}Struct(
     {%- for field in ffi_struct.fields() %}
-    {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }},
+    @JvmField internal var {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }},
     {%- endfor %}
 ) : com.sun.jna.Structure() {
-    {% for field in ffi_struct.fields() %}
-    @JvmField internal var {{ field.name()|var_name }}: {{ (field.type_().borrow()|ffi_type_name_for_ffi_struct_inner) }} = {{ field.name()|var_name }} as {{ field.type_().borrow()|ffi_type_name_for_ffi_struct_inner }}
-    {% endfor %}
-
     constructor(): this(
         {% for field in ffi_struct.fields() %}
         {{ field.name()|var_name }} = {{ field.type_()|ffi_default_value }},
@@ -43,11 +39,6 @@ internal open class {{ ffi_struct.name()|ffi_struct_name }}Struct(
 }
 
 internal typealias {{ ffi_struct.name()|ffi_struct_name }} = {{ ffi_struct.name()|ffi_struct_name }}Struct
-{% for field in ffi_struct.fields() %}
-internal var {{ ffi_struct.name()|ffi_struct_name }}.{{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }}
-    get() = this.{{ field.name()|var_name }}
-    set(value) { this.{{ field.name()|var_name }} = value as {{ field.type_().borrow()|ffi_type_name_for_ffi_struct_inner }} }
-{% endfor %}
 
 internal fun {{ ffi_struct.name()|ffi_struct_name }}.uniffiSetValue(other: {{ ffi_struct.name()|ffi_struct_name }}) {
     {%- for field in ffi_struct.fields() %}
@@ -61,10 +52,6 @@ internal fun {{ ffi_struct.name()|ffi_struct_name }}.uniffiSetValue(other: {{ ff
 }
 
 internal typealias {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue = {{ ffi_struct.name()|ffi_struct_name }}Struct.UniffiByValue
-{% for field in ffi_struct.fields() %}
-internal val {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue.{{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }}
-    get() = this.{{ field.name()|var_name }}
-{% endfor %}
 
 {%- when FfiDefinition::Function(_) %}
 {# functions are handled below #}
@@ -111,8 +98,8 @@ internal interface UniffiLib : Library {
 
     {% for func in ci.iter_ffi_function_definitions() -%}
     fun {{ func.name() }}(
-        {%- call kt::arg_list_ffi_decl_for_ffi_function(func) %}
-    ): {% match func.return_type() %}{% when Some with (return_type) %}{{ return_type.borrow()|ffi_type_name_for_ffi_function }}{% when None %}Unit{% endmatch %}
+        {%- call kt::arg_list_ffi_decl(func, 8) %}
+    ): {% match func.return_type() %}{% when Some with (return_type) %}{{ return_type.borrow()|ffi_type_name_by_value }}{% when None %}Unit{% endmatch %}
     {% endfor %}
 }
 
@@ -126,7 +113,9 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
     }
 }
 
+{% if ci.iter_checksums().next().is_none() -%}
 @Suppress("UNUSED_PARAMETER")
+{%- endif %}
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     {%- for (name, expected_checksum) in ci.iter_checksums() %}
     if (lib.{{ name }}() != {{ expected_checksum }}.toShort()) {

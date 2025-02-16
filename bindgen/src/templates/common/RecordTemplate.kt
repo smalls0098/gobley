@@ -15,9 +15,8 @@ data class {{ type_name }} (
     {%- endfor %}
 ) {% if contains_object_references %}: Disposable {% endif %}{
     {% if contains_object_references %}
-    @Suppress("UNNECESSARY_SAFE_CALL") // codegen is much simpler if we unconditionally emit safe calls here
     override fun destroy() {
-        {% call kt::destroy_fields(rec) %}
+        {%- call kt::destroy_fields(rec, 8) %}
     }
     {% endif %}
     companion object

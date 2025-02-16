@@ -1,5 +1,5 @@
 
-public object FfiConverterUByte: FfiConverter<UByte, Byte> {
+object FfiConverterUByte: FfiConverter<UByte, Byte> {
     override fun lift(value: Byte): UByte {
         return value.toUByte()
     }

@@ -2,16 +2,12 @@
 
 @Structure.FieldOrder("capacity", "len", "data")
 open class RustBufferStruct(
-    capacity: Long,
-    len: Long,
-    data: Pointer?,
-) : Structure() {
     // Note: `capacity` and `len` are actually `ULong` values, but JVM only supports signed values.
     // When dealing with these fields, make sure to call `toULong()`.
-    @JvmField internal var capacity: Long = capacity
-    @JvmField internal var len: Long = len
-    @JvmField internal var data: Pointer? = data
-
+    @JvmField internal var capacity: Long,
+    @JvmField internal var len: Long,
+    @JvmField internal var data: Pointer?,
+) : Structure() {
     constructor(): this(0.toLong(), 0.toLong(), null)
 
     class ByValue(
@@ -38,27 +34,13 @@ open class RustBufferStruct(
 }
 
 typealias RustBuffer = RustBufferStruct
-internal var RustBuffer.capacity: Long
-    get() = this.capacity
-    set(value) { this.capacity = value }
-internal var RustBuffer.len: Long
-    get() = this.len
-    set(value) { this.len = value }
-internal var RustBuffer.data: Pointer?
-    get() = this.data
-    set(value) { this.data = value }
+typealias RustBufferByValue = RustBufferStruct.ByValue
+
 internal fun RustBuffer.asByteBuffer(): ByteBuffer? {
     {% call kt::check_rust_buffer_length("this.len") %}
     return ByteBuffer(data?.getByteBuffer(0L, this.len) ?: return null)
 }
 
-typealias RustBufferByValue = RustBufferStruct.ByValue
-internal val RustBufferByValue.capacity: Long
-    get() = this.capacity
-internal val RustBufferByValue.len: Long
-    get() = this.len
-internal val RustBufferByValue.data: Pointer?
-    get() = this.data
 internal fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
     {% call kt::check_rust_buffer_length("this.len") %}
     return ByteBuffer(data?.getByteBuffer(0L, this.len) ?: return null)
@@ -96,17 +78,5 @@ internal open class ForeignBytesStruct : Structure() {
 
     internal class ByValue : ForeignBytes(), Structure.ByValue
 }
-
 internal typealias ForeignBytes = ForeignBytesStruct
-internal var ForeignBytes.len: Int
-    get() = this.len
-    set(value) { this.len = value }
-internal var ForeignBytes.data: Pointer?
-    get() = this.data
-    set(value) { this.data = value }
-
 internal typealias ForeignBytesByValue = ForeignBytesStruct.ByValue
-internal val ForeignBytesByValue.len: Int
-    get() = this.len
-internal val ForeignBytesByValue.data: Pointer?
-    get() = this.data

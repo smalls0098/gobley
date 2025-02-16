@@ -5,7 +5,7 @@ fun RustBuffer.setValue(array: RustBufferByValue) {
 }
 
 internal object RustBufferHelper {
-    fun allocValue(size: ULong = 0UL): RustBufferByValue = uniffiRustCall() { status ->
+    fun allocValue(size: ULong = 0UL): RustBufferByValue = uniffiRustCall { status ->
         // Note: need to convert the size to a `Long` value to make this work with JVM.
         UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_alloc().name() }}(size.toLong(), status)
     }.also {
@@ -14,7 +14,7 @@ internal object RustBufferHelper {
         }
     }
 
-    fun free(buf: RustBufferByValue) = uniffiRustCall() { status ->
-        UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_free().name() }}(buf, status)!!
+    fun free(buf: RustBufferByValue) = uniffiRustCall { status ->
+        UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_free().name() }}(buf, status)
     }
 }

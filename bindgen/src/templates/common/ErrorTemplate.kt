@@ -18,24 +18,23 @@ sealed class {{ type_name }}: kotlin.Exception(){% if contains_object_references
     {%- call kt::docstring(variant, 4) %}
     {%- let variant_name = variant|error_variant_name %}
     class {{ variant_name }}(
-        {% for field in variant.fields() -%}
+        {%- for field in variant.fields() -%}
         {%- call kt::docstring(field, 8) %}
-        val {% call kt::field_name(field, loop.index) %}: {{ field|type_name(ci) }}{% if loop.last %}{% else %}, {% endif %}
-        {% endfor -%}
+        val {% call kt::field_name(field, loop.index) %}: {{ field|type_name(ci) }},
+        {%- endfor %}
     ) : {{ type_name }}() {
         override val message
             get() = "{%- for field in variant.fields() %}{% call kt::field_name_unquoted(field, loop.index) %}=${ {% call kt::field_name(field, loop.index) %} }{% if !loop.last %}, {% endif %}{% endfor %}"
+        {%- if contains_object_references %}
 
-        {% if contains_object_references %}
-        @Suppress("UNNECESSARY_SAFE_CALL") // codegen is much simpler if we unconditionally emit safe calls here
         override fun destroy() {
-            {%- if variant.has_fields() %}
-            {% call kt::destroy_fields(variant) %}
-            {% else -%}
+            {% if variant.has_fields() -%}
+            {%- call kt::destroy_fields(variant, 12) -%}
+            {%- else -%}
             // Nothing to destroy
             {%- endif %}
         }
-        {% endif %}
+        {%- endif %}
     }
     {% endfor %}
 }

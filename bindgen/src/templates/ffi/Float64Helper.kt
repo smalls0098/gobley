@@ -1,5 +1,5 @@
 
-public object FfiConverterDouble: FfiConverter<Double, Double> {
+object FfiConverterDouble: FfiConverter<Double, Double> {
     override fun lift(value: Double): Double {
         return value
     }

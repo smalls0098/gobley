@@ -1,11 +1,9 @@
 
 internal class UniffiHandleMap<T: Any> {
-    // NOTE: java.util.concurrent.ConcurrentMap will be more efficient than a coarse grained lock
-    //       use it on JVM platforms
     private val mapLock = kotlinx.atomicfu.locks.ReentrantLock()
     private val map = HashMap<Long, T>()
 
-    // We'll start at 1L to prevent "Null Pointers" in native's `intepretCPointer`
+    // We'll start at 1L to prevent "Null Pointers" in native's `interpretCPointer`
     private val counter: kotlinx.atomicfu.AtomicLong = kotlinx.atomicfu.atomic(1L)
 
     val size: Int
@@ -25,7 +23,7 @@ internal class UniffiHandleMap<T: Any> {
 
     // Remove an entry from the handlemap and get the Kotlin object back
     fun remove(handle: Long): T {
-        return syncAccess { map.remove(handle) } ?: throw InternalException("UniffiHandleMap: Invalid handle")
+        return syncAccess { map.remove(handle) } ?: throw InternalException("UniffiHandleMap.remove: Invalid handle")
     }
 
     fun <T> syncAccess(block: () -> T): T {
