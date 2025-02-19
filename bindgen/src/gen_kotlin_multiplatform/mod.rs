@@ -6,6 +6,7 @@
 
 use std::borrow::Borrow;
 use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt::Debug;
 
@@ -97,7 +98,10 @@ pub struct Config {
     #[serde(default)]
     pub(super) external_packages: HashMap<String, String>,
     #[serde(default)]
+    kotlin_target_version: Option<String>,
+    #[serde(default)]
     disable_java_cleaner: bool,
+    generate_serializable_types: Option<bool>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -127,6 +131,43 @@ impl Config {
     /// Whether to generate immutable records (`val` instead of `var`)
     pub fn generate_immutable_records(&self) -> bool {
         self.generate_immutable_records.unwrap_or(false)
+    }
+
+    fn kotlin_version_is_at_least(&self, major: usize, minor: usize, patch: usize) -> bool {
+        let Some(kotlin_target_version) = &self.kotlin_target_version else {
+            return false;
+        };
+        let mut kotlin_target_version = kotlin_target_version.split(|c: char| !c.is_numeric());
+
+        for required_version in [major, minor, patch] {
+            let Some(current_version) = kotlin_target_version
+                .next()
+                .and_then(|v| v.parse::<usize>().ok())
+            else {
+                return required_version == 0;
+            };
+            match required_version.cmp(&current_version) {
+                Ordering::Equal => continue,
+                Ordering::Greater => return false,
+                Ordering::Less => return true,
+            }
+        }
+
+        true
+    }
+
+    pub fn use_enum_entries(&self) -> bool {
+        // Enum.entries became stable in Kotlin 1.9.0 (introduced in 1.8.20)
+        self.kotlin_version_is_at_least(1, 9, 0)
+    }
+
+    pub fn use_data_objects(&self) -> bool {
+        // data objects became stable in Kotlin 1.9.0 (introduced in 1.8.20)
+        self.kotlin_version_is_at_least(1, 9, 0)
+    }
+
+    pub fn generate_serializable(&self) -> bool {
+        self.generate_serializable_types.unwrap_or(false)
     }
 }
 
@@ -614,6 +655,14 @@ impl<T: AsType> AsCodeType for T {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DataClassFieldType {
+    Bytes,
+    NullableBytes,
+    NonNullableNonBytes,
+    NullableNonBytes,
+}
+
 mod filters {
     pub use uniffi_bindgen::backend::filters::*;
     use uniffi_meta::LiteralMetadata;
@@ -718,6 +767,128 @@ mod filters {
                 "Only ints are supported.".to_string(),
             )))),
         }
+    }
+
+    pub fn should_generate_equals_hash_code_record(record: &Record) -> Result<bool, askama::Error> {
+        Ok(record.fields().iter().any(|f| {
+            matches!(
+                as_data_class_field_type(f),
+                Ok(DataClassFieldType::Bytes | DataClassFieldType::NullableBytes)
+            )
+        }))
+    }
+
+    pub fn should_generate_equals_hash_code_enum_variant(
+        variant: &Variant,
+    ) -> Result<bool, askama::Error> {
+        Ok(variant.fields().iter().any(|f| {
+            matches!(
+                as_data_class_field_type(f),
+                Ok(DataClassFieldType::Bytes | DataClassFieldType::NullableBytes)
+            )
+        }))
+    }
+
+    pub fn as_data_class_field_type(
+        as_ct: &impl AsType,
+    ) -> Result<DataClassFieldType, askama::Error> {
+        fn as_bytes_field_type_inner(type_: &Type) -> DataClassFieldType {
+            match type_ {
+                Type::Bytes => DataClassFieldType::Bytes,
+                Type::Optional { inner_type } => match as_bytes_field_type_inner(inner_type) {
+                    DataClassFieldType::Bytes | DataClassFieldType::NullableBytes => {
+                        DataClassFieldType::NullableBytes
+                    }
+                    DataClassFieldType::NonNullableNonBytes
+                    | DataClassFieldType::NullableNonBytes => DataClassFieldType::NullableNonBytes,
+                },
+                _ => DataClassFieldType::NonNullableNonBytes,
+            }
+        }
+        Ok(as_bytes_field_type_inner(&as_ct.as_type()))
+    }
+
+    fn serializable_type(type_: &Type, ci: &ComponentInterface) -> Result<bool, askama::Error> {
+        Ok(match type_ {
+            Type::Object { .. } | Type::CallbackInterface { .. } => false,
+            Type::Record { name, .. } => serializable_record(
+                ci.get_record_definition(name).ok_or_else(|| {
+                    askama::Error::Custom(Box::new(UniFFIError::new(format!(
+                        "could not find record '{name}'"
+                    ))))
+                })?,
+                ci,
+            )?,
+            Type::Enum { name, .. } => serializable_enum(
+                ci.get_enum_definition(name).ok_or_else(|| {
+                    askama::Error::Custom(Box::new(UniFFIError::new(format!(
+                        "could not find enum '{name}'"
+                    ))))
+                })?,
+                ci,
+            )?,
+            Type::Optional { inner_type } | Type::Sequence { inner_type } => {
+                serializable_type(inner_type, ci)?
+            }
+            Type::Map {
+                key_type,
+                value_type,
+            } => serializable_type(key_type, ci)? && serializable_type(value_type, ci)?,
+            // Assume external records are all serializable.
+            Type::External {
+                kind: ExternalKind::DataClass,
+                ..
+            } => true,
+            // Assume a custom type using a serializable type is also serializable.
+            Type::Custom { builtin, .. } => serializable_type(builtin, ci)?,
+            _ => true,
+        })
+    }
+
+    pub fn serializable_record(
+        record: &Record,
+        ci: &ComponentInterface,
+    ) -> Result<bool, askama::Error> {
+        for field in record.fields() {
+            if !serializable_type(&field.as_type(), ci)? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    pub fn serializable_enum(enum_: &Enum, ci: &ComponentInterface) -> Result<bool, askama::Error> {
+        if ci.is_name_used_as_error(enum_.name()) {
+            return Ok(false);
+        }
+
+        if enum_.is_flat() {
+            let Some(variant_discr_type) = enum_.variant_discr_type() else {
+                return Ok(true);
+            };
+            return serializable_type(variant_discr_type, ci);
+        }
+
+        // Unlike records or enum variants, if any of the variants are serializable, the
+        // enum can be marked as serializable.
+        for variant in enum_.variants() {
+            if serializable_enum_variant(variant, ci)? {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
+    pub fn serializable_enum_variant(
+        variant: &Variant,
+        ci: &ComponentInterface,
+    ) -> Result<bool, askama::Error> {
+        for field in variant.fields() {
+            if !serializable_type(&field.as_type(), ci)? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
     }
 
     pub fn ffi_type_name_by_value(type_: &FfiType) -> Result<String, askama::Error> {

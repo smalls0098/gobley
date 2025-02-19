@@ -11,9 +11,13 @@ import io.gitlab.trixnity.gradle.cargo.dsl.CargoAndroidBuild
 import io.gitlab.trixnity.gradle.cargo.dsl.CargoExtension
 import io.gitlab.trixnity.gradle.cargo.dsl.CargoJvmBuild
 import io.gitlab.trixnity.gradle.cargo.dsl.CargoNativeBuild
-import io.gitlab.trixnity.gradle.uniffi.dsl.*
+import io.gitlab.trixnity.gradle.uniffi.dsl.BindingsGeneration
+import io.gitlab.trixnity.gradle.uniffi.dsl.BindingsGenerationFromLibrary
+import io.gitlab.trixnity.gradle.uniffi.dsl.BindingsGenerationFromUdl
+import io.gitlab.trixnity.gradle.uniffi.dsl.UniFfiExtension
 import io.gitlab.trixnity.gradle.uniffi.tasks.BuildBindingsTask
 import io.gitlab.trixnity.gradle.uniffi.tasks.InstallBindgenTask
+import io.gitlab.trixnity.gradle.uniffi.tasks.MergeUniffiConfigTask
 import io.gitlab.trixnity.gradle.utils.DependencyUtils
 import io.gitlab.trixnity.gradle.utils.PluginUtils
 import io.gitlab.trixnity.uniffi.gradle.DependencyVersions
@@ -29,7 +33,13 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.invoke
+import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
@@ -129,6 +139,41 @@ class UniFfiPlugin : Plugin<Project> {
             installDirectory.set(layout.buildDirectory.dir("bindgen-install"))
         }
 
+        val mergeUniffiConfig = tasks.register<MergeUniffiConfigTask>("mergeUniffiConfig") {
+            group = TASK_GROUP
+            originalConfig.set(
+                bindingsGeneration.config.orElse(
+                    cargoExtension.packageDirectory.file("uniffi.toml"),
+                ),
+            )
+
+            val kotlinVersionFromExtension = kotlinMultiplatformExtension.javaClass.`package`.implementationVersion
+            if (kotlinVersionFromExtension != null) {
+                kotlinVersion.set(kotlinVersionFromExtension)
+            }
+
+            // If the serialization plugin is applied and the runtime is added to the dependency
+            // list, set `generateSerializableTypes` to true so the bindgen renders @Serialization
+            // where applicable.
+            if (plugins.hasPlugin(PluginIds.KOTLIN_SERIALIZATION)) {
+                configurations.configureEach { configuration ->
+                    if (configuration.name == "commonMainApi"
+                        || configuration.name == "commonMainImplementation"
+                        || configuration.name == "commonMainCompileOnly"
+                    ) {
+                        configuration.dependencies.configureEach { dependency ->
+                            if (dependency.group == "org.jetbrains.kotlinx"
+                                && dependency.name.startsWith("kotlinx-serialization-")
+                            ) {
+                                useKotlinXSerialization.set(true)
+                            }
+                        }
+                    }
+                }
+            }
+            outputConfig.set(bindingsDirectory.map { it.file("uniffi.toml") })
+        }
+
         val buildBindings = tasks.register<BuildBindingsTask>("buildBindings") {
             group = TASK_GROUP
 
@@ -138,8 +183,7 @@ class UniFfiPlugin : Plugin<Project> {
             if (uniFfiExtension.formatCode.isPresent)
                 formatCode.set(uniFfiExtension.formatCode.get())
 
-            if (bindingsGeneration.config.isPresent)
-                config.set(bindingsGeneration.config)
+            config.set(mergeUniffiConfig.flatMap { it.outputConfig })
 
             when (bindingsGeneration) {
                 is BindingsGenerationFromUdl -> {
@@ -152,7 +196,7 @@ class UniFfiPlugin : Plugin<Project> {
                     source.set(bindingsOutputFile)
                 }
             }
-            dependsOn(cargoBuildTaskForBindings, installBindgen)
+            dependsOn(cargoBuildTaskForBindings, installBindgen, mergeUniffiConfig)
         }
 
         tasks.withType<KotlinCompile<*>> {

@@ -1,8 +1,11 @@
 
-{%- let rec = ci|get_record_definition(name) %}
+{%- let rec = ci|get_record_definition(name) -%}
+{%- let should_generate_equals_hash_code = rec|should_generate_equals_hash_code_record -%}
+{%- let should_generate_serializable = config.generate_serializable() && rec|serializable_record(ci) -%}
 
 {%- if rec.has_fields() %}
 {%- call kt::docstring(rec, 0) %}
+{% if should_generate_serializable %}@kotlinx.serialization.Serializable{% endif %}
 data class {{ type_name }} (
     {%- for field in rec.fields() %}
     {%- call kt::docstring(field, 4) %}
@@ -14,24 +17,17 @@ data class {{ type_name }} (
     {% if !loop.last %}, {% endif %}
     {%- endfor %}
 ) {% if contains_object_references %}: Disposable {% endif %}{
-    {% if contains_object_references %}
+    {%- if should_generate_equals_hash_code -%}
+    {%- call kt::generate_equals_hash_code(rec, type_name, 4) -%}
+    {%- endif -%}
+    {%- if contains_object_references %}
     override fun destroy() {
         {%- call kt::destroy_fields(rec, 8) %}
     }
-    {% endif %}
+    {%- endif %}
     companion object
 }
 {%- else -%}
 {%- call kt::docstring(rec, 0) %}
-class {{ type_name }} {
-    override fun equals(other: Any?): Boolean {
-        return other is {{ type_name }}
-    }
-
-    override fun hashCode(): Int {
-        return super.hashCode()
-    }
-
-    companion object
-}
+{% if config.use_data_objects() %}data {% endif %}object {{ type_name }}
 {%- endif %}

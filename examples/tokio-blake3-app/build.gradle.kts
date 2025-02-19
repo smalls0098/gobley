@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.atomicfu)
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
+    id(libs.plugins.kotlin.serialization.get().pluginId)
 }
 
 uniffi {
@@ -37,6 +38,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(libs.kotlinx.serialization.json)
         }
 
         androidMain.dependencies {

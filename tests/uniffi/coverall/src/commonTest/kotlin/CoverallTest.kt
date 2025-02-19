@@ -298,8 +298,9 @@ class CoverallTest {
         }
 
         Coveralls("test_empty_records").use { coveralls ->
-            coveralls.setAndGetEmptyStruct(EmptyStruct()) shouldBe EmptyStruct()
-            EmptyStruct() shouldNotBeSameInstanceAs EmptyStruct()
+            coveralls.setAndGetEmptyStruct(EmptyStruct) shouldBe EmptyStruct
+            // Upstream generates EmptyStruct as a normal class, but we generate as an object.
+            // EmptyStruct shouldNotBeSameInstanceAs EmptyStruct
         }
 
         runGCWithDelay()

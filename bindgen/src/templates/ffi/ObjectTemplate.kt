@@ -201,6 +201,6 @@ object {{ ffi_converter_name }}: FfiConverter<{%- call converter_type(obj) -%}, 
     override fun write(value: {% call converter_type(obj) %}, buf: ByteBuffer) {
         // The Rust code always expects pointers written as 8 bytes,
         // and will fail to compile if they don't fit.
-        buf.putLong(getPointerNativeValue(lower(value)))
+        buf.putLong(lower(value).toLong())
     }
 }

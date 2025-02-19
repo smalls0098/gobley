@@ -204,13 +204,83 @@ v{{- field_num -}}
 {%- endif -%}
 {%- endmacro %}
 
- // Macro for destroying fields
+{#- Macro for destroying fields -#}
 {%- macro destroy_fields(member, indent) %}
 {{ " "|repeat(indent) }}Disposable.destroy(
                             {%- for field in member.fields() %}
 {{ " "|repeat(indent) }}    this.{%- call field_name(field, loop.index) -%},
                             {%- endfor %}
 {{ " "|repeat(indent) }})
+{%- endmacro -%}
+
+{#- Macro for generating equals() ans hashCode() -#}
+{%- macro generate_equals_hash_code(data_class, type_name, indent) %}
+{{ " "|repeat(indent) }}override fun equals(other: Any?): Boolean {
+{{ " "|repeat(indent) }}    if (this === other) return true
+{{ " "|repeat(indent) }}    if (other == null || this::class != other::class) return false
+
+{{ " "|repeat(indent) }}    other as {{ type_name }}
+
+                            {%- if data_class.fields().len() == 1 -%}
+                            {%-     for field in data_class.fields() %}
+                            {%-         match field|as_data_class_field_type -%}
+                            {%-             when DataClassFieldType::Bytes %}
+{{ " "|repeat(indent) }}    return {{ field.name()|var_name }}.contentEquals(other.{{ field.name()|var_name }})
+                            {%-             when DataClassFieldType::NullableBytes %}
+{{ " "|repeat(indent) }}    if ({{ field.name()|var_name }} != null) {
+{{ " "|repeat(indent) }}        if (other.{{ field.name()|var_name }} == null) return false
+{{ " "|repeat(indent) }}        if (!{{ field.name()|var_name }}.contentEquals(other.{{ field.name()|var_name }})) return false
+{{ " "|repeat(indent) }}    }
+
+{{ " "|repeat(indent) }}    return true
+                            {%-             else %}
+{{ " "|repeat(indent) }}    return {{ field.name()|var_name }} == other.{{ field.name()|var_name }}
+                            {%-         endmatch -%}
+                            {%-     endfor -%}
+                            {%- else -%}
+                            {%-     for field in data_class.fields() -%}
+                            {%-         match field|as_data_class_field_type -%}
+                            {%-             when DataClassFieldType::Bytes %}
+{{ " "|repeat(indent) }}    if (!{{ field.name()|var_name }}.contentEquals(other.{{ field.name()|var_name }})) return false
+                            {%-             when DataClassFieldType::NullableBytes %}
+{{ " "|repeat(indent) }}    if ({{ field.name()|var_name }} != null) {
+{{ " "|repeat(indent) }}        if (other.{{ field.name()|var_name }} == null) return false
+{{ " "|repeat(indent) }}        if (!{{ field.name()|var_name }}.contentEquals(other.{{ field.name()|var_name }})) return false
+{{ " "|repeat(indent) }}    }
+                            {%-             else %}
+{{ " "|repeat(indent) }}    if ({{ field.name()|var_name }} != other.{{ field.name()|var_name }}) return false
+                            {%-         endmatch -%}
+                            {%-     endfor %}
+
+{{ " "|repeat(indent) }}    return true
+                            {%- endif %}
+{{ " "|repeat(indent) }}{{ '}' }}
+{{ " "|repeat(indent) }}override fun hashCode(): Int {
+                            {%- for field in data_class.fields() -%}
+                            {%-     if loop.first -%}
+                            {%-         if data_class.fields().len() == 1 %}
+{{ " "|repeat(indent) }}    return{{ ' ' }}
+                            {%-         else %}
+{{ " "|repeat(indent) }}    var result ={{ ' ' }}
+                            {%-         endif -%}
+                            {%-     else %}
+{{ " "|repeat(indent) }}    result = 31 * result +{{ ' ' }}
+                            {%-     endif -%}
+                            {%-     match field|as_data_class_field_type -%}
+                            {%-         when DataClassFieldType::Bytes -%}
+                            {{ field.name()|var_name }}.contentHashCode()
+                            {%-         when DataClassFieldType::NullableBytes -%}
+                            ({{ field.name()|var_name }}?.contentHashCode() ?: 0)
+                            {%-         when DataClassFieldType::NonNullableNonBytes -%}
+                            {{ field.name()|var_name }}.hashCode()
+                            {%-         when DataClassFieldType::NullableNonBytes -%}
+                            ({{ field.name()|var_name }}?.hashCode() ?: 0)
+                            {%-     endmatch -%}
+                            {%- endfor -%}
+                            {%- if data_class.fields().len() > 1 %}
+{{ " "|repeat(indent) }}    return result
+                            {%- endif %}
+{{ " "|repeat(indent) }}{{ '}' }}
 {%- endmacro -%}
 
 {%- macro docstring_value(maybe_docstring, indent_spaces) %}

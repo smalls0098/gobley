@@ -10,7 +10,7 @@ object {{ rec|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
         {%- endfor %}
         )
         {%- else %}
-        return {{ type_name }}()
+        return {{ type_name }}
         {%- endif %}
     }
 

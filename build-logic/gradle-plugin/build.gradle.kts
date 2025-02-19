@@ -24,6 +24,7 @@ dependencies {
     implementation(plugin(libs.plugins.android.library))
 
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.tomlkt)
     implementation(libs.jna)
 
     testImplementation(kotlin("test"))
@@ -56,6 +57,7 @@ buildConfig {
     forClass("PluginIds") {
         buildConfigField("String", "KOTLIN_MULTIPLATFORM", "\"${libs.plugins.kotlin.multiplatform.get().pluginId}\"")
         buildConfigField("String", "KOTLIN_ATOMIC_FU", "\"${libs.plugins.kotlin.atomicfu.get().pluginId}\"")
+        buildConfigField("String", "KOTLIN_SERIALIZATION", "\"${libs.plugins.kotlin.serialization.get().pluginId}\"")
         buildConfigField("String", "ANDROID_APPLICATION", "\"${libs.plugins.android.application.get().pluginId}\"")
         buildConfigField("String", "ANDROID_LIBRARY", "\"${libs.plugins.android.library.get().pluginId}\"")
         buildConfigField("String", "CARGO_KOTLIN_MULTIPLATFORM", "\"io.gitlab.trixnity.cargo.kotlin.multiplatform\"")
