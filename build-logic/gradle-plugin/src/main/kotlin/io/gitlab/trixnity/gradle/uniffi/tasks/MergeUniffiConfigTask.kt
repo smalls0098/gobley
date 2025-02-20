@@ -11,8 +11,8 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import net.peanuuutz.tomlkt.Toml
 import org.gradle.api.DefaultTask
-import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
@@ -44,6 +44,14 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
     @get:Optional
     abstract val useKotlinXSerialization: Property<Boolean>
 
+    @get:Input
+    @get:Optional
+    abstract val jvmDependentDynamicLibraries: ListProperty<String>
+
+    @get:Input
+    @get:Optional
+    abstract val androidDependentDynamicLibraries: ListProperty<String>
+
     @get:OutputFile
     abstract val outputConfig: RegularFileProperty
 
@@ -59,6 +67,14 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
                 ?: kotlinVersion.orNull?.takeIf { it.isNotBlank() },
             generateSerializableTypes = originalConfig.generateSerializableTypes
                 ?: useKotlinXSerialization.orNull,
+            jvmDependentDynamicLibraries = mergeSet(
+                originalConfig.jvmDependentDynamicLibraries,
+                jvmDependentDynamicLibraries.orNull,
+            ),
+            androidDependentDynamicLibraries = mergeSet(
+                originalConfig.androidDependentDynamicLibraries,
+                androidDependentDynamicLibraries.orNull,
+            ),
         )
         outputConfig.get().asFile.writeText(toml.encodeToString(result), Charsets.UTF_8)
     }
@@ -104,6 +120,12 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
         }
 
         return newMap.toMap()
+    }
+
+    private fun mergeSet(lhs: List<String>?, rhs: List<String>?): List<String>? {
+        if (lhs == null) return rhs
+        if (rhs == null) return lhs
+        return lhs + rhs
     }
 
     companion object {

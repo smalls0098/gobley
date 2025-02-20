@@ -13,7 +13,7 @@ plugins {
 
 cargo {
     builds.android {
-        ndkLibraries.addAll("aaudio", "c++_shared")
+        dynamicLibraries.addAll("aaudio", "c++_shared")
     }
 }
 

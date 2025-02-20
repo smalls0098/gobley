@@ -70,6 +70,9 @@ private fun findLibraryName(componentName: String): String {
 private inline fun <reified Lib : Library> loadIndirect(
     componentName: String
 ): Lib {
+    {%- for dynamic_library in config.dynamic_library_dependencies(module_name) %}
+    com.sun.jna.Native.register(object : com.sun.jna.Library {}::class.java, "{{ dynamic_library }}")
+    {%- endfor %}
     return Native.load<Lib>(findLibraryName(componentName), Lib::class.java)
 }
 
@@ -80,13 +83,13 @@ internal interface UniffiLib : Library {
     companion object {
         internal val INSTANCE: UniffiLib by lazy {
             loadIndirect<UniffiLib>(componentName = "{{ ci.namespace() }}")
-            .also { lib: UniffiLib ->
-                uniffiCheckContractApiVersion(lib)
-                uniffiCheckApiChecksums(lib)
-                {% for fn in self.initialization_fns() -%}
-                {{ fn }}(lib)
-                {% endfor -%}
-            }
+                .also { lib: UniffiLib ->
+                    uniffiCheckContractApiVersion(lib)
+                    uniffiCheckApiChecksums(lib)
+                    {% for fn in self.initialization_fns() -%}
+                    {{ fn }}(lib)
+                    {% endfor -%}
+                }
         }
         {% if ci.contains_object_types() %}
         // The Cleaner for the whole library
