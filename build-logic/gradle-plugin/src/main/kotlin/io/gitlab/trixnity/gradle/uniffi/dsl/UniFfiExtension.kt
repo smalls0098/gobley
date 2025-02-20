@@ -7,6 +7,7 @@
 package io.gitlab.trixnity.gradle.uniffi.dsl
 
 import io.gitlab.trixnity.gradle.Variant
+import io.gitlab.trixnity.gradle.cargo.rust.targets.RustTarget
 import io.gitlab.trixnity.uniffi.gradle.BuildConfig
 import org.gradle.api.Action
 import org.gradle.api.GradleException
@@ -113,10 +114,10 @@ sealed class BindingsGeneration(internal val project: Project) {
     abstract val namespace: Property<String>
 
     /**
-     * The name of the build to use to generate bindings. If unspecified, one of the available builds will be
+     * The Rust target of the build to use to generate bindings. If unspecified, one of the available builds will be
      * automatically selected.
      */
-    abstract val build: Property<String>
+    abstract val build: Property<RustTarget>
 
     /**
      * The variant of the build to use to generate bindings. If unspecified, one of the available variants will be

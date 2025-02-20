@@ -104,11 +104,11 @@ class UniFfiPlugin : Plugin<Project> {
     private fun Project.configureBindingTasks() {
         val bindingsGeneration = bindingsGeneration
         val androidTargetsToBuild = cargoExtension.androidTargetsToBuild.get()
-        val buildName = bindingsGeneration.build.orNull ?: cargoExtension.builds.filter {
+        val buildRustTarget = bindingsGeneration.build.orNull ?: cargoExtension.builds.filter {
             it !is CargoAndroidBuild || androidTargetsToBuild.contains(it.rustTarget)
-        }.map { it.name }.first()
-        val build =
-            cargoExtension.builds.findByName(buildName) ?: throw GradleException("Cargo build $buildName not available")
+        }.map { it.rustTarget }.first()
+        val build = cargoExtension.builds.findByRustTarget(buildRustTarget)
+            ?: throw GradleException("Cargo build for $buildRustTarget not available")
 
         val availableVariants = build.kotlinTargets.flatMap {
             when (it) {
@@ -121,10 +121,10 @@ class UniFfiPlugin : Plugin<Project> {
 
         val variant = bindingsGeneration.variant.orNull
             ?: availableVariants.firstOrNull()
-            ?: throw GradleException("Cargo build $buildName has no available variants")
+            ?: throw GradleException("Cargo build $buildRustTarget has no available variants")
 
         if (!availableVariants.contains(variant))
-            throw GradleException("Variant $variant is not available in Cargo build $buildName")
+            throw GradleException("Variant $variant is not available in Cargo build $buildRustTarget")
 
         val buildVariantForBindings = build.variant(variant)
         val cargoBuildTaskForBindings = buildVariantForBindings.buildTaskProvider

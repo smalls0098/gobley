@@ -229,6 +229,28 @@ cargo {
 }
 ```
 
+On Windows, both MinGW and Visual C++ can generate DLLs. By default, the Cargo plugin doesn't invoke the MinGW build
+for JVM when Visual C++ is available. To override this behavior, use the `jvm` property like the following. Note that
+Windows on ARM is not available with MinGW.
+
+```kotlin
+import io.gitlab.trixnity.gradle.RustHost
+import io.gitlab.trixnity.gradle.cargo.rust.targets.RustWindowsTarget
+import io.gitlab.trixnity.gradle.cargo.dsl.*
+
+cargo {
+    builds.jvm {
+        if (RustHost.Platform.Windows.isCurrent) {
+            when (rustTarget) {
+                RustWindowsTarget.X64 -> jvm = false
+                RustPosixTarget.MinGWX64 -> jvm = true
+                else -> {}
+            }
+        }
+    }
+}
+```
+
 Android local unit tests requires JVM targets to be built, as they run in the host machine's JVM. The Cargo plugin
 automatically copies the Rust shared library targeting the host machine into Android local unit tests. It also finds
 projects that depend on the project using the Cargo plugin, and the Rust library will be copied to all projects that
@@ -332,6 +354,7 @@ UniFFI plugin to build bindings from the resulting library binary.
 
 ```kotlin
 import io.gitlab.trixnity.gradle.Variant
+import io.gitlab.trixnity.gradle.cargo.rust.targets.RustAndroidTarget
 
 plugins {
     kotlin("multiplatform")
@@ -344,9 +367,9 @@ uniffi {
     generateFromLibrary {
         // The UDL namespace as in the UDL file. Defaults to the library crate name.
         namespace = "my_crate"
-        // The name of the build that makes the library to use to generate the bindings. The list of the names can be
-        // retrieved with `cargo.builds.names`. If not specified, the UniFFI plugin automatically selects a build.
-        build = "AndroidArm64"
+        // The Rust target of the build to use to generate the bindings. If unspecified, one of the available builds
+        // will be automatically selected.
+        build = RustAndroidTarget.Arm64
         // The variant of the build that makes the library to use. If unspecified, the UniFFI plugin automatically picks
         // one.
         variant = Variant.Debug
@@ -360,7 +383,7 @@ If you want to generate bindings from a UDL file as well, you can specify the pa
 uniffi {
     generateFromUdl {
         namespace = "..."
-        build = "..."
+        build = ...
         variant = Variant.Debug
         // The UDL file. Defaults to "${crateDirectory}/src/${crateName}.udl".
         udlFile = layout.projectDirectory.file("rust/src/my_crate.udl")

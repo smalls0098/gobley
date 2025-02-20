@@ -7,6 +7,7 @@
 package io.gitlab.trixnity.gradle.cargo.dsl
 
 import groovy.lang.Closure
+import io.gitlab.trixnity.gradle.cargo.rust.targets.RustTarget
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectCollection
 import org.gradle.api.UnknownDomainObjectException
@@ -26,6 +27,8 @@ interface CargoBuildCollection<T : CargoBuild<*>> : NamedDomainObjectCollection<
     override fun <S : T> named(
         name: String, type: Class<S>, configurationAction: Action<in S>
     ): CargoBuildProvider<S>
+
+    fun findByRustTarget(rustTarget: RustTarget): T?
 }
 
 @get:JvmName("android")
@@ -248,4 +251,8 @@ internal class CargoBuildCollectionImpl<T : CargoBuild<*>>(
     override fun <S : T> named(
         name: String, type: Class<S>, configurationAction: Action<in S>
     ): CargoBuildProvider<S> = CargoBuildProviderImpl(base.named(name, type, configurationAction))
+
+    override fun findByRustTarget(rustTarget: RustTarget): T? {
+        return findByName(rustTarget.friendlyName)
+    }
 }

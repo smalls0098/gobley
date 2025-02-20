@@ -27,7 +27,10 @@ abstract class CargoPosixBuild @Inject constructor(
 ), CargoJvmBuild<CargoPosixBuildVariant>, CargoNativeBuild<CargoPosixBuildVariant> {
     init {
         resourcePrefix.convention(rustTarget.jnaResourcePrefix)
-        jvm.convention(true)
+        jvm.convention(
+            // On Windows, CargoWindowsBuild is used by default.
+            !RustHost.Platform.Windows.isCurrent || !rustTarget.isWindows()
+        )
         androidUnitTest.convention(rustTarget == RustHost.current.rustTarget)
     }
 }
