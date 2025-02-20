@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.kotlin.atomicfu)
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.compose.compiler)
 }
 
 cargo {
@@ -54,12 +55,12 @@ kotlin {
 
 android {
     namespace = "io.gitlab.trixnity.uniffi.examples.audiocppapp"
-    compileSdk = 34
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "io.gitlab.trixnity.uniffi.examples.audiocppapp"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1"
         ndk.abiFilters.add("arm64-v8a")
@@ -74,12 +75,5 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    buildFeatures {
-        compose = true
-        composeOptions {
-            kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
-        }
     }
 }

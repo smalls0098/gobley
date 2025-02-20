@@ -1,10 +1,12 @@
 import io.gitlab.trixnity.gradle.RustHost
 import io.gitlab.trixnity.gradle.rust.dsl.useRustUpLinker
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     kotlin("multiplatform")
     id("io.gitlab.trixnity.rust.kotlin.multiplatform")
     alias(libs.plugins.android.application)
+    alias(libs.plugins.compose.compiler)
 }
 
 kotlin {
@@ -100,14 +102,18 @@ kotlin {
     }
 }
 
+composeCompiler {
+    targetKotlinPlatforms = setOf(KotlinPlatformType.androidJvm)
+}
+
 android {
     namespace = "io.gitlab.trixnity.uniffi.examples.app"
-    compileSdk = 34
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "io.gitlab.trixnity.uniffi.examples.app"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1"
         ndk.abiFilters.add("arm64-v8a")
@@ -122,12 +128,5 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    buildFeatures {
-        compose = true
-        composeOptions {
-            kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
-        }
     }
 }

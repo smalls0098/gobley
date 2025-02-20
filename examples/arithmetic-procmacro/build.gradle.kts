@@ -47,7 +47,7 @@ kotlin {
 
 android {
     namespace = "io.gitlab.trixnity.uniffi.examples.arithmeticpm"
-    compileSdk = 34
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
         consumerProguardFiles("proguard-rules.pro")

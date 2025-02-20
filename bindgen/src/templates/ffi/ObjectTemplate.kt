@@ -15,7 +15,7 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
 
     constructor(pointer: Pointer) {
         this.pointer = pointer
-        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(pointer))
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiPointerDestroyer(pointer))
     }
 
     /**
@@ -25,7 +25,7 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
      */
     actual constructor(noPointer: NoPointer) {
         this.pointer = null
-        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(pointer))
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiPointerDestroyer(null))
     }
 
     {%- match obj.primary_constructor() %}
@@ -99,8 +99,8 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
 
     // Use a static inner class instead of a closure so as not to accidentally
     // capture `this` as part of the cleanable's action.
-    private class UniffiCleanAction(private val pointer: Pointer?) : Runnable {
-        override fun run() {
+    private class UniffiPointerDestroyer(private val pointer: Pointer?) : Disposable {
+        override fun destroy() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
                     UniffiLib.INSTANCE.{{ obj.ffi_object_free().name() }}(ptr, status)

@@ -1,5 +1,5 @@
-import org.gradle.accessors.dm.*
 import io.gitlab.trixnity.gradle.rust.dsl.hostNativeTarget
+import org.gradle.accessors.dm.*
 
 plugins {
     id("io.gitlab.trixnity.rust.kotlin.multiplatform")
@@ -7,14 +7,15 @@ plugins {
     kotlin("plugin.atomicfu")
 }
 
+// https://github.com/gradle/gradle/issues/15383
+apply<VersionCatalogPlugin>()
+val libs = extensions.getByName("libs") as LibrariesForLibs
+
 kotlin {
     jvmToolchain(17)
     jvm()
     hostNativeTarget()
     sourceSets {
-        // https://github.com/gradle/gradle/issues/15383
-        val libs = the<LibrariesForLibs>()
-
         commonTest {
             dependencies {
                 implementation(kotlin("test"))

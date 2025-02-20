@@ -40,7 +40,6 @@ import org.gradle.kotlin.dsl.invoke
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
-import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
@@ -247,7 +246,7 @@ class UniFfiPlugin : Plugin<Project> {
             dependsOn(cargoBuildTaskForBindings, installBindgen, mergeUniffiConfig)
         }
 
-        tasks.withType<KotlinCompile<*>> {
+        tasks.withType<KotlinCompilationTask<*>> {
             dependsOn(buildBindings)
         }
 
@@ -373,8 +372,8 @@ class UniFfiPlugin : Plugin<Project> {
             compilation.defaultSourceSet {
                 kotlin.srcDir(nativeBindingsDirectory)
             }
-            compilation.compilerOptions.configure {
-                optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
+            compilation.compileTaskProvider.configure { compileTask ->
+                compileTask.compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
             }
         }
     }

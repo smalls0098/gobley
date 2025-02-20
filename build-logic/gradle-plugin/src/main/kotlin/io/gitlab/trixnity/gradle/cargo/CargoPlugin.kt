@@ -452,8 +452,8 @@ class CargoPlugin : Plugin<Project> {
                     task.dependsOn(buildTask)
                 }
             }
-            compilation.compilerOptions.configure {
-                optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
+            compilation.compileTaskProvider.configure { compileTask ->
+                compileTask.compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
             }
         }
     }

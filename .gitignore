@@ -3,6 +3,7 @@ build
 .cxx
 .gradle
 .idea
+.kotlin
 .DS_Store
 local.properties
 xcuserdata

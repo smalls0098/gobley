@@ -65,7 +65,7 @@ fun KotlinMultiplatformExtension.hostNativeTarget(
 }
 
 fun KotlinNativeCompilation.useRustUpLinker() {
-    compilerOptions.configure {
+    compileTaskProvider.configure { compileTask ->
         PluginUtils.ensurePluginIsApplied(
             project,
             PluginUtils.PluginInfo(
@@ -81,7 +81,7 @@ fun KotlinNativeCompilation.useRustUpLinker() {
             project.extensions.findByType<CargoExtension>()?.toolchainDirectory
                 ?: project.extensions.findByType<RustExtension>()?.toolchainDirectory
         val rustUpLinker = project.rustUpLinker(toolchainDirectory!!.get()).absolutePath
-        freeCompilerArgs.add(
+        compileTask.compilerOptions.freeCompilerArgs.add(
             "-Xoverride-konan-properties=linker.${RustHost.current.konanName}-${target.konanTarget.name}=$rustUpLinker"
         )
     }

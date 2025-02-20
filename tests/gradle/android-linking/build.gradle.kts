@@ -84,7 +84,7 @@ kotlin {
 
 android {
     namespace = "io.gitlab.trixnity.uniffi.tests.gradle.androidlinking"
-    compileSdk = 34
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 29

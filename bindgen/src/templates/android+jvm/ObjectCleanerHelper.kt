@@ -3,14 +3,20 @@
 private class UniffiJnaCleaner : UniffiCleaner {
     private val cleaner = com.sun.jna.internal.Cleaner.getCleaner()
 
-    override fun register(value: Any, cleanUpTask: Runnable): UniffiCleaner.Cleanable =
-        UniffiJnaCleanable(cleaner.register(value, cleanUpTask))
+    override fun register(resource: Any, disposable: Disposable): UniffiCleaner.Cleanable =
+        UniffiJnaCleanable(cleaner.register(resource, UniffiCleanerAction(disposable)))
 }
 
 private class UniffiJnaCleanable(
     private val cleanable: com.sun.jna.internal.Cleaner.Cleanable,
 ) : UniffiCleaner.Cleanable {
     override fun clean() = cleanable.clean()
+}
+
+private class UniffiCleanerAction(private val disposable: Disposable): Runnable {
+    override fun run() {
+        disposable.destroy()
+    }
 }
 
 {%- if config.disable_java_cleaner %}
@@ -25,8 +31,8 @@ private fun UniffiCleaner.Companion.create(): UniffiCleaner = UniffiJnaCleaner()
 private class AndroidSystemCleaner : UniffiCleaner {
     private val cleaner = android.system.SystemCleaner.cleaner()
 
-    override fun register(value: Any, cleanUpTask: Runnable): UniffiCleaner.Cleanable =
-        AndroidSystemCleanable(cleaner.register(value, cleanUpTask))
+    override fun register(resource: Any, disposable: Disposable): UniffiCleaner.Cleanable =
+        AndroidSystemCleanable(cleaner.register(resource, UniffiCleanerAction(disposable)))
 }
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -48,8 +54,8 @@ private fun UniffiCleaner.Companion.create(): UniffiCleaner =
 private class JavaLangRefCleaner : UniffiCleaner {
     private val cleaner: java.lang.ref.Cleaner = java.lang.ref.Cleaner.create()
 
-    override fun register(value: Any, cleanUpTask: Runnable): UniffiCleaner.Cleanable =
-        JavaLangRefCleanable(cleaner.register(value, cleanUpTask))
+    override fun register(resource: Any, disposable: Disposable): UniffiCleaner.Cleanable =
+        JavaLangRefCleanable(cleaner.register(resource, UniffiCleanerAction(disposable)))
 }
 
 private class JavaLangRefCleanable(

@@ -50,7 +50,7 @@ kotlin {
 
 android {
     namespace = "io.gitlab.trixnity.uniffi.examples.todolist"
-    compileSdk = 34
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
         consumerProguardFiles("proguard-rules.pro")
