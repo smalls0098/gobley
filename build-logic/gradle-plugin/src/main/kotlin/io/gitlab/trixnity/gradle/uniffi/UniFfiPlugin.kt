@@ -7,7 +7,6 @@
 package io.gitlab.trixnity.gradle.uniffi
 
 import io.gitlab.trixnity.gradle.Variant
-import io.gitlab.trixnity.gradle.cargo.CargoPackage
 import io.gitlab.trixnity.gradle.cargo.dsl.CargoAndroidBuild
 import io.gitlab.trixnity.gradle.cargo.dsl.CargoExtension
 import io.gitlab.trixnity.gradle.cargo.dsl.CargoJvmBuild
@@ -28,7 +27,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
@@ -50,7 +48,6 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-import java.io.File
 
 private const val TASK_GROUP = "uniffi"
 
@@ -203,6 +200,38 @@ class UniFfiPlugin : Plugin<Project> {
                 formatCode.set(uniFfiExtension.formatCode.get())
 
             config.set(mergeUniffiConfig.flatMap { it.outputConfig })
+
+            configByCrateName.put(
+                cargoExtension.cargoPackage.get().libraryCrateName,
+                mergedConfig.map { it.asFile },
+            )
+            rootByCrateName.put(
+                cargoExtension.cargoPackage.get().libraryCrateName,
+                cargoExtension.cargoPackage.get().root.asFile,
+            )
+            DependencyUtils.configureEachCommonProjectDependencies(configurations) { dependencyProject ->
+                if (dependencyProject.plugins.hasPlugin(PluginIds.UNIFFI_KOTLIN_MULTIPLATFORM)
+                    && dependencyProject.plugins.hasPlugin(PluginIds.CARGO_KOTLIN_MULTIPLATFORM)) {
+
+                    // Different projects use different class loaders; we need to access those projects'
+                    // cargoPackage using reflection.
+                    val cargoExtension = dependencyProject.extensions.getByName("cargo")
+                    val getCargoPackage = cargoExtension::class.java.getMethod("getCargoPackage")
+
+                    val cargoPackageProvider = getCargoPackage.invoke(cargoExtension) as Provider<*>
+                    val cargoPackage = cargoPackageProvider.get()
+
+                    val getRoot = cargoPackage::class.java.getMethod("getRoot")
+                    val root = getRoot.invoke(cargoPackage) as Directory
+
+                    val getLibraryCrateName = cargoPackage::class.java.getMethod("getLibraryCrateName")
+                    val libraryCrateName = getLibraryCrateName.invoke(cargoPackage) as String
+
+                    configByCrateName.put(libraryCrateName, dependencyProject.mergedConfig.map { it.asFile })
+                    rootByCrateName.put(libraryCrateName, root.asFile)
+                    dependsOn(dependencyProject.tasks.named("mergeUniffiConfig"))
+                }
+            }
 
             when (bindingsGeneration) {
                 is BindingsGenerationFromUdl -> {

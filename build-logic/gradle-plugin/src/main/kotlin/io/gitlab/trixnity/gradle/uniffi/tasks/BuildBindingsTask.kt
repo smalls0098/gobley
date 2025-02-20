@@ -9,9 +9,11 @@ package io.gitlab.trixnity.gradle.uniffi.tasks
 import io.gitlab.trixnity.gradle.cargo.tasks.CargoPackageTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
+import java.io.File
 
 @CacheableTask
 abstract class BuildBindingsTask : CargoPackageTask() {
@@ -34,6 +36,20 @@ abstract class BuildBindingsTask : CargoPackageTask() {
     @get:Optional
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val config: RegularFileProperty
+
+    /**
+     * Path to the optional uniffi config file by a crate name.
+     */
+    @get:Input
+    @get:Optional
+    abstract val configByCrateName: MapProperty<String, File>
+
+    /**
+     * Path of the package by a crate name.
+     */
+    @get:Input
+    @get:Optional
+    abstract val rootByCrateName: MapProperty<String, File>
 
     /**
      * Extract proc-macro metadata from a native lib (cdylib or staticlib) for this crate.
@@ -90,6 +106,16 @@ abstract class BuildBindingsTask : CargoPackageTask() {
             }
             if (config.isPresent) {
                 arguments("--config", config.get())
+            }
+            if (configByCrateName.isPresent) {
+                for ((crateName, packageConfig) in configByCrateName.get()) {
+                    arguments("--crate-configs", "$crateName=$packageConfig")
+                }
+            }
+            if (rootByCrateName.isPresent) {
+                for ((crateName, packageConfig) in rootByCrateName.get()) {
+                    arguments("--crate-paths", "$crateName=$packageConfig")
+                }
             }
             if (libraryFile.isPresent) {
                 arguments("--lib-file", libraryFile.get())

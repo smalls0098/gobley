@@ -565,7 +565,13 @@ impl KotlinCodeOracle {
             FfiType::Handle => "Long".to_string(),
             FfiType::RustArcPtr(_) => "Pointer?".to_string(),
             FfiType::RustBuffer(maybe_suffix) => {
-                format!("RustBuffer{}", maybe_suffix.as_deref().unwrap_or_default())
+                format!(
+                    "RustBuffer{}",
+                    maybe_suffix
+                        .as_ref()
+                        .map(|s| s.name.as_str())
+                        .unwrap_or_default()
+                )
             }
             FfiType::RustCallStatus => "UniffiRustCallStatusByValue".to_string(),
             FfiType::ForeignBytes => "ForeignBytesByValue".to_string(),
@@ -590,7 +596,13 @@ impl KotlinCodeOracle {
             FfiType::Handle => "int64_t".to_string(),
             FfiType::RustArcPtr(_) => "void *".to_string(),
             FfiType::RustBuffer(maybe_suffix) => {
-                format!("RustBuffer{}", maybe_suffix.as_deref().unwrap_or_default())
+                format!(
+                    "RustBuffer{}",
+                    maybe_suffix
+                        .as_ref()
+                        .map(|s| s.name.as_str())
+                        .unwrap_or_default()
+                )
             }
             FfiType::RustCallStatus => "UniffiRustCallStatus".to_string(),
             FfiType::ForeignBytes => "ForeignBytes".to_string(),
@@ -985,20 +997,20 @@ mod filters {
     pub fn ffi_cast_to_external_rust_buffer_if_needed(
         type_: &FfiType,
     ) -> Result<String, askama::Error> {
-        let FfiType::RustBuffer(Some(postfix)) = type_ else {
+        let FfiType::RustBuffer(Some(metadata)) = type_ else {
             return Ok(String::new());
         };
-        Ok(format!(".as{postfix}()"))
+        Ok(format!(".as{}()", metadata.name))
     }
 
     /// Convert an external RustBuffer to a local RustBuffer.
     pub fn ffi_cast_to_local_rust_buffer_if_needed(
         type_: &FfiType,
     ) -> Result<String, askama::Error> {
-        let FfiType::RustBuffer(Some(postfix)) = type_ else {
+        let FfiType::RustBuffer(Some(metadata)) = type_ else {
             return Ok(String::new());
         };
-        Ok(format!(".from{postfix}ToLocal()"))
+        Ok(format!(".from{}ToLocal()", metadata.name))
     }
 
     /// Append a `_` if the name is a valid c/c++ keyword
