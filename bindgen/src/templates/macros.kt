@@ -180,7 +180,7 @@
         {{ arg.name()|var_name }},
         {%- endif -%}
         {%- else %}
-        {{ arg.name()|var_name }},
+        {{ arg.name()|var_name }}{{- arg.type_().borrow()|ffi_cast_to_local_rust_buffer_if_needed -}},
         {%- endif -%}
     {%- endfor -%}
     {%- if func.has_rust_call_status_arg() %}

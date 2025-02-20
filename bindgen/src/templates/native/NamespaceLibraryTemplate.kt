@@ -102,5 +102,10 @@ internal class UniffiLibInstance: UniffiLib {
     {%- endmatch %} = {{ ci.namespace() }}.cinterop.{{ func.name() }}(
         {%- call kt::arg_list_ffi_call_native(func) %}
     )
+    {%- match func.return_type() -%}
+    {%- when Some with (return_type) -%}
+    {{- return_type|ffi_cast_to_external_rust_buffer_if_needed -}}
+    {%- when None -%}
+    {%- endmatch %}
     {% endfor %}
 }

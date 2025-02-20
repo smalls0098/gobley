@@ -60,8 +60,9 @@ buildConfig {
         buildConfigField("String", "KOTLIN_SERIALIZATION", "\"${libs.plugins.kotlin.serialization.get().pluginId}\"")
         buildConfigField("String", "ANDROID_APPLICATION", "\"${libs.plugins.android.application.get().pluginId}\"")
         buildConfigField("String", "ANDROID_LIBRARY", "\"${libs.plugins.android.library.get().pluginId}\"")
-        buildConfigField("String", "CARGO_KOTLIN_MULTIPLATFORM", "\"io.gitlab.trixnity.cargo.kotlin.multiplatform\"")
         buildConfigField("String", "RUST_KOTLIN_MULTIPLATFORM", "\"io.gitlab.trixnity.rust.kotlin.multiplatform\"")
+        buildConfigField("String", "CARGO_KOTLIN_MULTIPLATFORM", "\"io.gitlab.trixnity.cargo.kotlin.multiplatform\"")
+        buildConfigField("String", "UNIFFI_KOTLIN_MULTIPLATFORM", "\"io.gitlab.trixnity.uniffi.kotlin.multiplatform\"")
     }
 }
 

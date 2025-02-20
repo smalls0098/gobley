@@ -8,8 +8,8 @@ kotlin {
             dependencies {
                 implementation(libs.ktor.http)
                 api(project(":examples:custom-types"))
-                api(project(":tests:ext-types:custom-types"))
-                api(project(":tests:ext-types:uniffi-one"))
+                api(project(":tests:uniffi:ext-types:custom-types"))
+                api(project(":tests:uniffi:ext-types:uniffi-one"))
             }
         }
     }

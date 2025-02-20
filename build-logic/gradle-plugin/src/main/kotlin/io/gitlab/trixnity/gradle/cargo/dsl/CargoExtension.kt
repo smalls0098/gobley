@@ -20,6 +20,7 @@ import org.gradle.api.provider.SetProperty
 import org.gradle.api.reflect.TypeOf
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.HasProject
+import java.io.File
 
 abstract class CargoExtension(final override val project: Project) : HasProject, HasFeatures,
     HasVariants<CargoExtensionVariant>, HasJvmVariant, HasNativeVariant {
@@ -33,7 +34,7 @@ abstract class CargoExtension(final override val project: Project) : HasProject,
      * The directory where `cargo` and `rustup` are installed. Defaults to `~/.cargo/bin`. If `RustExtension` is
      * present, uses [RustExtension.toolchainDirectory].
      */
-    internal val toolchainDirectory = project.provider {
+    internal val toolchainDirectory: Provider<File> = project.provider {
         project.extensions.findByType<RustExtension>()?.toolchainDirectory?.get()
             ?: RustHost.current.platform.defaultToolchainDirectory
     }
@@ -41,7 +42,7 @@ abstract class CargoExtension(final override val project: Project) : HasProject,
     /**
      * The parsed metadata and manifest of the package.
      */
-    internal val cargoPackage: Provider<CargoPackage> =
+    val cargoPackage: Provider<CargoPackage> =
         project.objects.property<CargoPackage>().value(
             packageDirectory.zip(toolchainDirectory) { pkg, toolchain ->
                 CargoPackage(project, pkg, toolchain)

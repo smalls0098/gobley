@@ -6,12 +6,11 @@
 
 import kotlin.test.Test
 import ext_types.*
-import custom.*
+import custom_types.*
 import io.kotest.matchers.shouldBe
 import sub_lib.*
 import uniffi_one.*
 import io.ktor.http.Url
-import kotlinx.coroutines.runBlocking
 
 class ExtTypesTest {
     @Test
@@ -19,7 +18,7 @@ class ExtTypesTest {
         val ct = getCombinedType(null)
         ct.uot.sval shouldBe "hello"
         ct.guid shouldBe  "a-guid"
-        ct.url shouldBe  java.net.URL("http://example.com/")
+        ct.url shouldBe  Url("http://example.com/")
 
         val ct2 = getCombinedType(ct)
         ct shouldBe ct2
@@ -31,7 +30,7 @@ class ExtTypesTest {
         getSubType(null).maybeInterface shouldBe null
         getTraitImpl().hello() shouldBe "sub-lib trait impl says hello"
 
-        val url = java.net.URL("http://example.com/")
+        val url = Url("http://example.com/")
         getUrl(url) shouldBe  url
         getMaybeUrl(url)!! shouldBe  url
         getMaybeUrl(null) shouldBe  null

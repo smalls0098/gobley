@@ -7,6 +7,8 @@
 package io.gitlab.trixnity.gradle.utils
 
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ConfigurationContainer
+import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ProjectDependency
 
 internal object DependencyUtils {
@@ -47,6 +49,31 @@ internal object DependencyUtils {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    fun configureEachCommonDependencies(
+        configurations: ConfigurationContainer,
+        action: (Dependency) -> Unit,
+    ) {
+        configurations.configureEach { configuration ->
+            if (configuration.name == "commonMainApi"
+                || configuration.name == "commonMainImplementation"
+                || configuration.name == "commonMainCompileOnly"
+            ) {
+                configuration.dependencies.configureEach(action)
+            }
+        }
+    }
+
+    fun configureEachCommonProjectDependencies(
+        configurations: ConfigurationContainer,
+        action: (Project) -> Unit,
+    ) {
+        configureEachCommonDependencies(configurations) { dependency ->
+            if (dependency is ProjectDependency) {
+                action(dependency.dependencyProject)
             }
         }
     }

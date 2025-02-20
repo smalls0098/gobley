@@ -200,9 +200,9 @@ pub fn generate_bindings(
         .render()
         .context("failed to render Kotlin/Native bindings")?;
 
-    let header = HeaderKotlinWrapper::new(config.clone(), ci)
+    let header = HeadersKotlinWrapper::new("headers", config.clone(), ci)
         .render()
-        .context("failed to render Kotlin/Native header")?;
+        .context("failed to render Kotlin/Native headers")?;
 
     Ok(MultiplatformBindings {
         common,
@@ -371,20 +371,12 @@ kotlin_wrapper!(
 kotlin_type_renderer!(NativeTypeRenderer, "native/Types.kt");
 kotlin_wrapper!(NativeKotlinWrapper, NativeTypeRenderer, "native/wrapper.kt");
 
-#[derive(Template)]
-#[template(syntax = "c", escape = "none", path = "headers/wrapper.h")]
-#[allow(dead_code)]
-pub struct HeaderKotlinWrapper<'ci> {
-    #[allow(dead_code)]
-    config: Config,
-    ci: &'ci ComponentInterface,
-}
-
-impl<'ci> HeaderKotlinWrapper<'ci> {
-    pub fn new(config: Config, ci: &'ci ComponentInterface) -> Self {
-        Self { config, ci }
-    }
-}
+kotlin_type_renderer!(HeadersTypeRenderer, "headers/Types.h");
+kotlin_wrapper!(
+    HeadersKotlinWrapper,
+    HeadersTypeRenderer,
+    "headers/wrapper.h"
+);
 
 #[derive(Clone)]
 pub struct KotlinCodeOracle;
@@ -600,6 +592,15 @@ impl KotlinCodeOracle {
             (format!("{class_name}Interface"), class_name)
         }
     }
+
+    #[allow(clippy::only_used_in_recursion)]
+    fn as_external_type(&self, as_ct: &impl AsType) -> Option<String> {
+        match as_ct.as_type() {
+            Type::External { name, .. } => Some(name),
+            Type::Custom { builtin, .. } => self.as_external_type(&builtin),
+            _ => None,
+        }
+    }
 }
 
 trait AsCodeType {
@@ -707,11 +708,18 @@ mod filters {
         ))
     }
 
-    pub(super) fn write_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
-        Ok(format!(
-            "{}.write",
-            as_ct.as_codetype().ffi_converter_name()
-        ))
+    pub(super) fn write_fn(as_ct: &impl AsType) -> Result<String, askama::Error> {
+        if let Some(external_type_name) = KotlinCodeOracle.as_external_type(as_ct) {
+            Ok(format!(
+                "{}.write{external_type_name}",
+                as_ct.as_codetype().ffi_converter_name()
+            ))
+        } else {
+            Ok(format!(
+                "{}.write",
+                as_ct.as_codetype().ffi_converter_name()
+            ))
+        }
     }
 
     pub(super) fn lift_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
@@ -726,8 +734,15 @@ mod filters {
         Ok(matches!(type_, FfiType::RustArcPtr(_)))
     }
 
-    pub(super) fn read_fn(as_ct: &impl AsCodeType) -> Result<String, askama::Error> {
-        Ok(format!("{}.read", as_ct.as_codetype().ffi_converter_name()))
+    pub(super) fn read_fn(as_ct: &impl AsType) -> Result<String, askama::Error> {
+        if let Some(external_type_name) = KotlinCodeOracle.as_external_type(as_ct) {
+            Ok(format!(
+                "{}.read{external_type_name}",
+                as_ct.as_codetype().ffi_converter_name()
+            ))
+        } else {
+            Ok(format!("{}.read", as_ct.as_codetype().ffi_converter_name()))
+        }
     }
 
     pub fn render_literal(
@@ -938,6 +953,26 @@ mod filters {
                         | FfiType::Struct(_)
                 )
             }))
+    }
+
+    /// Convert a local RustBuffer to an external RustBuffer.
+    pub fn ffi_cast_to_external_rust_buffer_if_needed(
+        type_: &FfiType,
+    ) -> Result<String, askama::Error> {
+        let FfiType::RustBuffer(Some(postfix)) = type_ else {
+            return Ok(String::new());
+        };
+        Ok(format!(".as{postfix}()"))
+    }
+
+    /// Convert an external RustBuffer to a local RustBuffer.
+    pub fn ffi_cast_to_local_rust_buffer_if_needed(
+        type_: &FfiType,
+    ) -> Result<String, askama::Error> {
+        let FfiType::RustBuffer(Some(postfix)) = type_ else {
+            return Ok(String::new());
+        };
+        Ok(format!(".from{postfix}ToLocal()"))
     }
 
     /// Append a `_` if the name is a valid c/c++ keyword

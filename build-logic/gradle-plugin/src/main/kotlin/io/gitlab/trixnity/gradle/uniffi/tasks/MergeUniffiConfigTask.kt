@@ -11,7 +11,9 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import net.peanuuutz.tomlkt.Toml
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
@@ -21,6 +23,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import java.io.File
 
 @CacheableTask
 abstract class MergeUniffiConfigTask : DefaultTask() {
@@ -28,6 +31,10 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
     @get:Optional
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val originalConfig: RegularFileProperty
+
+    @get:Input
+    @get:Optional
+    abstract val externalPackageConfigByCrateName: MapProperty<String, File>
 
     @get:Input
     @get:Optional
@@ -42,17 +49,61 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
 
     @TaskAction
     fun mergeConfig() {
-        val originalConfigFile = originalConfig.orNull?.asFile
-        val originalConfig = originalConfigFile?.let {
-            toml.decodeFromString<Config>(it.readText(Charsets.UTF_8))
-        } ?: Config()
+        val originalConfig = originalConfig.orNull?.asFile?.let(::loadConfig) ?: Config()
         val result = originalConfig.copy(
+            externalPackages = mergeMap(
+                originalConfig.externalPackages,
+                externalPackageConfigByCrateName.orNull?.let(::retrieveExternalPackageNames),
+            ),
             kotlinTargetVersion = originalConfig.kotlinTargetVersion
                 ?: kotlinVersion.orNull?.takeIf { it.isNotBlank() },
             generateSerializableTypes = originalConfig.generateSerializableTypes
                 ?: useKotlinXSerialization.orNull,
         )
         outputConfig.get().asFile.writeText(toml.encodeToString(result), Charsets.UTF_8)
+    }
+
+    private fun loadConfig(file: File): Config {
+        return toml.decodeFromString<Config>(file.readText(Charsets.UTF_8))
+    }
+
+    private fun retrieveExternalPackageNames(
+        externalPackageConfigByCrateName: Map<String, File>
+    ): Map<String, String> {
+        val result = mutableMapOf<String, String>()
+        for ((crateName, configFile) in externalPackageConfigByCrateName) {
+            val config = loadConfig(configFile)
+            if (!result.contains(crateName)) {
+                if (config.packageName != null) {
+                    result[crateName] = config.packageName
+                }
+            }
+            if (config.externalPackages != null) {
+                for ((externalCrateName, externalPackageName) in config.externalPackages) {
+                    if (!result.contains(externalCrateName)) {
+                        result[crateName] = externalPackageName
+                    }
+                }
+            }
+        }
+        return result.toMap()
+    }
+
+    private fun mergeMap(
+        original: Map<String, String>?,
+        new: Map<String, String>?,
+    ): Map<String, String>? {
+        if (original == null) return new
+        if (new == null) return original
+
+        val newMap = original.toMutableMap()
+        for ((newKey, newValue) in new) {
+            if (!newMap.contains(newKey)) {
+                newMap[newKey] = newValue
+            }
+        }
+
+        return newMap.toMap()
     }
 
     companion object {

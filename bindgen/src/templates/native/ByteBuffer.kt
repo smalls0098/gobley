@@ -1,21 +1,18 @@
 
 class ByteBuffer(
-    private val pointer: CPointer<kotlinx.cinterop.ByteVar>,
-    private val capacity: Int,
-    private var position: Int = 0,
+    internal val pointer: CPointer<kotlinx.cinterop.ByteVar>,
+    internal val capacity: Int,
+    internal var position: Int = 0,
 ) {
-
-    fun pointer() = pointer
-
-    fun limit() = capacity
-
     fun position() = position
 
     fun hasRemaining() = capacity != position
 
-    private inline fun checkRemaining(bytes: Int) {
+    private fun checkRemaining(bytes: Int) {
         val remaining = capacity - position
-        require(bytes <= remaining) { "buffer is exhausted: required: $bytes, remaining: $remaining" }
+        require(bytes <= remaining) { 
+            "buffer is exhausted: required: $bytes, remaining: $remaining, capacity: $capacity, position: $position" 
+        }
     }
 
     fun get(): Byte {

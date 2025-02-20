@@ -1,17 +1,17 @@
 {% include "ffi/RustBufferTemplate.kt" %}
 
-internal typealias RustBuffer = CPointer<{{ ci.namespace() }}.cinterop.RustBuffer>
+typealias RustBuffer = CPointer<{{ ci.namespace() }}.cinterop.RustBuffer>
 
-internal var RustBuffer.capacity: Long
+var RustBuffer.capacity: Long
     get() = pointed.capacity
     set(value) { pointed.capacity = value }
-internal var RustBuffer.len: Long
+var RustBuffer.len: Long
     get() = pointed.len
     set(value) { pointed.len = value }
-internal var RustBuffer.data: Pointer?
+var RustBuffer.data: Pointer?
     get() = pointed.data
     set(value) { pointed.data = value?.reinterpret() }
-internal fun RustBuffer.asByteBuffer(): ByteBuffer? {
+fun RustBuffer.asByteBuffer(): ByteBuffer? {
     {% call kt::check_rust_buffer_length("pointed.len") %}
     return ByteBuffer(
         pointed.data?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null,
@@ -19,7 +19,7 @@ internal fun RustBuffer.asByteBuffer(): ByteBuffer? {
     )
 }
 
-internal typealias RustBufferByValue = CValue<{{ ci.namespace() }}.cinterop.RustBuffer>
+typealias RustBufferByValue = CValue<{{ ci.namespace() }}.cinterop.RustBuffer>
 fun RustBufferByValue(
     capacity: Long,
     len: Long,
@@ -31,13 +31,13 @@ fun RustBufferByValue(
         this.data = data?.reinterpret()
     }
 }
-internal val RustBufferByValue.capacity: Long
+val RustBufferByValue.capacity: Long
     get() = useContents { capacity }
-internal val RustBufferByValue.len: Long
+val RustBufferByValue.len: Long
     get() = useContents { len }
-internal val RustBufferByValue.data: Pointer?
+val RustBufferByValue.data: Pointer?
     get() = useContents { data }
-internal fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
+fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
     {% call kt::check_rust_buffer_length("len") %}
     return ByteBuffer(
         data?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null,

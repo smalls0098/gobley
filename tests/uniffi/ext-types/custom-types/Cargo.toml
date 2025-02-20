@@ -5,7 +5,10 @@ edition = "2021"
 publish = false
 
 [lib]
-name = "uniffi_kmm_fixture_ext_types_custom_types"
+# The name of this library is `ext_types_custom` in upstream. Add the kmm_
+# prefix here to prevent potential name conflict when UniFFI tries to find the
+# target by its name.
+name = "kmm_ext_types_custom"
 crate-type = ["lib", "cdylib", "staticlib"]
 path = "src/commonMain/rust/lib.rs"
 

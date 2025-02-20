@@ -4,11 +4,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+use kmm_uniffi_one::{UniffiOneEnum, UniffiOneInterface, UniffiOneTrait};
 use std::sync::Arc;
-use uniffi_kmm_fixture_ext_types_uniffi_one::{UniffiOneEnum, UniffiOneInterface, UniffiOneTrait};
 
-uniffi::use_udl_object!(uniffi_kmm_fixture_ext_types_uniffi_one, UniffiOneInterface);
-uniffi::use_udl_enum!(uniffi_kmm_fixture_ext_types_uniffi_one, UniffiOneEnum);
+uniffi::use_udl_object!(kmm_uniffi_one, UniffiOneInterface);
+uniffi::use_udl_enum!(kmm_uniffi_one, UniffiOneEnum);
 
 #[derive(Default, uniffi::Record)]
 pub struct SubLibType {

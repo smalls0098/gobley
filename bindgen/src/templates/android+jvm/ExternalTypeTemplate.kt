@@ -12,10 +12,10 @@
 {{ self.add_import_as(fully_qualified_rustbuffer_name, local_rustbuffer_name) }}
 {{ self.add_import_as(fully_qualified_rustbuffer_by_value_name, local_rustbuffer_by_value_name) }}
 
-fun {{ fully_qualified_ffi_converter_name }}.read(buf: ByteBuffer): {{ name|class_name(ci) }} {
+fun {{ fully_qualified_ffi_converter_name }}.read{{ name }}(buf: ByteBuffer): {{ name|class_name(ci) }} {
     return read({{ package_name }}.ByteBuffer(buf.internal()))
 }
 
-fun {{ fully_qualified_ffi_converter_name }}.write(value: {{ name|class_name(ci) }}, buf: ByteBuffer) {
+fun {{ fully_qualified_ffi_converter_name }}.write{{ name }}(value: {{ name|class_name(ci) }}, buf: ByteBuffer) {
     write(value, {{ package_name }}.ByteBuffer(buf.internal()))
 }

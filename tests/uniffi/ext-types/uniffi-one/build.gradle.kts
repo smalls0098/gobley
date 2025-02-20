@@ -1,3 +1,9 @@
 plugins {
-    id("uniffi-tests-from-library")
+    id("uniffi-tests")
+}
+
+uniffi {
+    generateFromLibrary {
+        namespace = "kmm_uniffi_one"
+    }
 }

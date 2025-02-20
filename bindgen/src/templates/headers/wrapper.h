@@ -5,8 +5,11 @@
 #include <stdint.h>
 
 {% include "RustBufferTemplate.h" %}
-
 {% include "Helpers.h" %}
 
-{% include "NamespaceLibraryTemplate.h" %}
+// Public interface members begin here.
+{{ type_helper_code }}
 
+// Contains loading, initialization code,
+// and the FFI Function declarations.
+{% include "NamespaceLibraryTemplate.h" %}

@@ -7,6 +7,7 @@
 package io.gitlab.trixnity.gradle.uniffi
 
 import io.gitlab.trixnity.gradle.Variant
+import io.gitlab.trixnity.gradle.cargo.CargoPackage
 import io.gitlab.trixnity.gradle.cargo.dsl.CargoAndroidBuild
 import io.gitlab.trixnity.gradle.cargo.dsl.CargoExtension
 import io.gitlab.trixnity.gradle.cargo.dsl.CargoJvmBuild
@@ -27,6 +28,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
@@ -48,6 +50,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import java.io.File
 
 private const val TASK_GROUP = "uniffi"
 
@@ -147,6 +150,29 @@ class UniFfiPlugin : Plugin<Project> {
                 ),
             )
 
+            DependencyUtils.configureEachCommonProjectDependencies(configurations) { dependencyProject ->
+                if (dependencyProject.plugins.hasPlugin(PluginIds.UNIFFI_KOTLIN_MULTIPLATFORM)
+                    && dependencyProject.plugins.hasPlugin(PluginIds.CARGO_KOTLIN_MULTIPLATFORM)) {
+
+                    // Different projects use different class loaders; we need to access those projects'
+                    // cargoPackage using reflection.
+                    val cargoExtension = dependencyProject.extensions.getByName("cargo")
+                    val getCargoPackage = cargoExtension::class.java.getMethod("getCargoPackage")
+
+                    val cargoPackageProvider = getCargoPackage.invoke(cargoExtension) as Provider<*>
+                    val cargoPackage = cargoPackageProvider.get()
+
+                    val getLibraryCrateName = cargoPackage::class.java.getMethod("getLibraryCrateName")
+                    val libraryCrateName = getLibraryCrateName.invoke(cargoPackage) as String
+
+                    externalPackageConfigByCrateName.put(
+                        libraryCrateName,
+                        dependencyProject.mergedConfig.map { it.asFile },
+                    )
+                    dependsOn(dependencyProject.tasks.named("mergeUniffiConfig"))
+                }
+            }
+
             val kotlinVersionFromExtension = kotlinMultiplatformExtension.javaClass.`package`.implementationVersion
             if (kotlinVersionFromExtension != null) {
                 kotlinVersion.set(kotlinVersionFromExtension)
@@ -156,22 +182,15 @@ class UniFfiPlugin : Plugin<Project> {
             // list, set `generateSerializableTypes` to true so the bindgen renders @Serialization
             // where applicable.
             if (plugins.hasPlugin(PluginIds.KOTLIN_SERIALIZATION)) {
-                configurations.configureEach { configuration ->
-                    if (configuration.name == "commonMainApi"
-                        || configuration.name == "commonMainImplementation"
-                        || configuration.name == "commonMainCompileOnly"
+                DependencyUtils.configureEachCommonDependencies(configurations) { dependency ->
+                    if (dependency.group == "org.jetbrains.kotlinx"
+                        && dependency.name.startsWith("kotlinx-serialization-")
                     ) {
-                        configuration.dependencies.configureEach { dependency ->
-                            if (dependency.group == "org.jetbrains.kotlinx"
-                                && dependency.name.startsWith("kotlinx-serialization-")
-                            ) {
-                                useKotlinXSerialization.set(true)
-                            }
-                        }
+                        useKotlinXSerialization.set(true)
                     }
                 }
             }
-            outputConfig.set(bindingsDirectory.map { it.file("uniffi.toml") })
+            outputConfig.set(mergedConfig)
         }
 
         val buildBindings = tasks.register<BuildBindingsTask>("buildBindings") {
@@ -349,6 +368,9 @@ private val Project.nativeBindingsDirectory: Provider<Directory>
 
 private val Project.nativeBindingsCInteropDirectory: Provider<Directory>
     get() = bindingsDirectory.map { it.dir("nativeInterop/cinterop") }
+
+private val Project.mergedConfig: Provider<RegularFile>
+    get() = bindingsDirectory.map { it.file("uniffi.toml") }
 
 private fun Project.nativeBindingsCInteropDef(libraryCrateName: String): Provider<RegularFile> =
     nativeBindingsCInteropDirectory.map { it.file("$libraryCrateName.def") }

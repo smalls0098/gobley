@@ -1,4 +1,4 @@
-namespace uniffi_one {};
+namespace kmm_uniffi_one {};
 
 dictionary UniffiOneType {
     string sval;
