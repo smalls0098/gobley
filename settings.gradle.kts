@@ -24,35 +24,47 @@ plugins {
 
 rootProject.name = "uniffi-kotlin-multiplatform-bindings"
 
-include(":tests:gradle:android-linking")
-include(":tests:gradle:cargo-only")
-include(":tests:gradle:no-uniffi-block")
+fun ExtraPropertiesExtension.propertyIsTrue(propertyName: String): Boolean? {
+    if (!has(propertyName)) return null
+    val propertyValue = this[propertyName]?.toString()?.lowercase() ?: return null
+    return propertyValue == "true" || propertyValue == "1"
+}
 
-include(":tests:uniffi:callbacks")
-include(":tests:uniffi:chronological")
-include(":tests:uniffi:coverall")
-include(":tests:uniffi:docstring")
-include(":tests:uniffi:docstring-proc-macro")
-include(":tests:uniffi:enum-types")
-include(":tests:uniffi:error-types")
-include(":tests:uniffi:ext-types:custom-types")
-include(":tests:uniffi:ext-types:ext-types")
-include(":tests:uniffi:ext-types:ext-types-proc-macro")
-include(":tests:uniffi:ext-types:http-headermap")
-include(":tests:uniffi:ext-types:sub-lib")
-include(":tests:uniffi:ext-types:uniffi-one")
-include(":tests:uniffi:futures")
-include(":tests:uniffi:keywords")
-include(":tests:uniffi:proc-macro")
-include(":tests:uniffi:simple-fns")
-include(":tests:uniffi:simple-iface")
-include(":tests:uniffi:struct-default-values")
-include(":tests:uniffi:trait-methods")
-include(":tests:uniffi:type-limits")
+if (ext.propertyIsTrue("uniffi-kmm.projects.gradleTests") == true) {
+    include(":tests:gradle:android-linking")
+    include(":tests:gradle:cargo-only")
+    include(":tests:gradle:no-uniffi-block")
+}
 
-include(":examples:app")
-include(":examples:arithmetic-procmacro")
-include(":examples:audio-cpp-app")
-include(":examples:custom-types")
-include(":examples:todolist")
-include(":examples:tokio-blake3-app")
+if (ext.propertyIsTrue("uniffi-kmm.projects.uniffiTests") == true) {
+    include(":tests:uniffi:callbacks")
+    include(":tests:uniffi:chronological")
+    include(":tests:uniffi:coverall")
+    include(":tests:uniffi:docstring")
+    include(":tests:uniffi:docstring-proc-macro")
+    include(":tests:uniffi:enum-types")
+    include(":tests:uniffi:error-types")
+    include(":tests:uniffi:ext-types:custom-types")
+    include(":tests:uniffi:ext-types:ext-types")
+    include(":tests:uniffi:ext-types:ext-types-proc-macro")
+    include(":tests:uniffi:ext-types:http-headermap")
+    include(":tests:uniffi:ext-types:sub-lib")
+    include(":tests:uniffi:ext-types:uniffi-one")
+    include(":tests:uniffi:futures")
+    include(":tests:uniffi:keywords")
+    include(":tests:uniffi:proc-macro")
+    include(":tests:uniffi:simple-fns")
+    include(":tests:uniffi:simple-iface")
+    include(":tests:uniffi:struct-default-values")
+    include(":tests:uniffi:trait-methods")
+    include(":tests:uniffi:type-limits")
+}
+
+if (ext.propertyIsTrue("uniffi-kmm.projects.examples") == true) {
+    include(":examples:app")
+    include(":examples:arithmetic-procmacro")
+    include(":examples:audio-cpp-app")
+    include(":examples:custom-types")
+    include(":examples:todolist")
+    include(":examples:tokio-blake3-app")
+}

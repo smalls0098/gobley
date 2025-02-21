@@ -4,28 +4,50 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import net.peanuuutz.tomlkt.Toml
-import net.peanuuutz.tomlkt.asTomlArray
-import net.peanuuutz.tomlkt.asTomlTable
 import java.io.File
 
 data class BindgenInfo(
     val name: String,
     val version: String,
-    val binName: String,
-)
+    val binaryName: String,
+) {
+    companion object {
+        fun fromCargoManifest(file: File): BindgenInfo {
+            val manifestString = file.readText(Charsets.UTF_8)
+            val manifest = CargoManifest.toml.decodeFromString<CargoManifest>(manifestString)
+            return BindgenInfo(
+                name = manifest.`package`.name,
+                version = manifest.`package`.version,
+                binaryName = manifest.binaries[0].name,
+            )
+        }
+    }
+}
 
-fun parseBindgenCargoToml(file: File): BindgenInfo {
-    val tomlString = file.readText()
-    val tomlTable = Toml.parseToTomlTable(tomlString)
-
-    val packageData = tomlTable["package"]!!.asTomlTable()
-    val allBinData = tomlTable["bin"]!!.asTomlArray()
-    val binData = allBinData[0].asTomlTable()
-
-    return BindgenInfo(
-        name = packageData["name"].toString(),
-        version = packageData["version"].toString(),
-        binName = binData["name"].toString(),
+@Serializable
+internal data class CargoManifest(
+    @SerialName("package") val `package`: Package,
+    @SerialName("bin") val binaries: List<BinaryTarget>,
+) {
+    @Serializable
+    data class Package(
+        val name: String,
+        val version: String,
     )
+
+    @Serializable
+    data class BinaryTarget(
+        val name: String
+    )
+
+    companion object {
+        val toml = Toml {
+            ignoreUnknownKeys = true
+            explicitNulls = false
+        }
+    }
 }

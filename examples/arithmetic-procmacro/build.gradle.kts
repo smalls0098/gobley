@@ -1,5 +1,6 @@
 import io.gitlab.trixnity.gradle.RustHost
 import io.gitlab.trixnity.gradle.rust.dsl.useRustUpLinker
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
@@ -15,7 +16,12 @@ uniffi {
 }
 
 kotlin {
-    androidTarget()
+    androidTarget {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
+    }
+    jvmToolchain(17)
     jvm("desktop")
     arrayOf(
         mingwX64(),

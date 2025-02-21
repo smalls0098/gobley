@@ -2,6 +2,7 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import io.gitlab.trixnity.gradle.RustHost
 import io.gitlab.trixnity.gradle.cargo.dsl.android
 import io.gitlab.trixnity.gradle.cargo.rust.targets.RustAndroidTarget
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
@@ -10,10 +11,12 @@ plugins {
 }
 
 // Build a library manually to test passing an absolute path to `dynamicLibraries` works well
-val anotherCustomCppLibraryRoot: Directory = project.layout.projectDirectory.dir("another-android-linking-cpp")
+val anotherCustomCppLibraryRoot: Directory =
+    project.layout.projectDirectory.dir("another-android-linking-cpp")
 val androidTargets = RustAndroidTarget.values()
 val anotherCustomCppLibraryCmakeOutputDirectories = androidTargets.associateWith {
-    project.layout.buildDirectory.dir("intermediates/ninja/project/debug/${it.androidAbiName}").get()
+    project.layout.buildDirectory.dir("intermediates/ninja/project/debug/${it.androidAbiName}")
+        .get()
 }
 val anotherCustomCppLibraryLocations = anotherCustomCppLibraryCmakeOutputDirectories.mapValues {
     it.value.file("libanother-android-linking-cpp.so")
@@ -21,10 +24,12 @@ val anotherCustomCppLibraryLocations = anotherCustomCppLibraryCmakeOutputDirecto
 val androidSdkCMakeDirectory = android.sdkDirectory
     .resolve("cmake")
     .listFiles()
-    .first { file -> file.name.startsWith("3.") }
-    .resolve("bin")
-val androidSdkCMake = androidSdkCMakeDirectory.resolve(RustHost.Platform.current.convertExeName("cmake"))
-val androidSdkNinja = androidSdkCMakeDirectory.resolve(RustHost.Platform.current.convertExeName("ninja"))
+    ?.firstOrNull { file -> file.name.startsWith("3.") }
+    ?.resolve("bin") ?: error("CMake is not installed in Android SDK")
+val androidSdkCMake =
+    androidSdkCMakeDirectory.resolve(RustHost.Platform.current.convertExeName("cmake"))
+val androidSdkNinja =
+    androidSdkCMakeDirectory.resolve(RustHost.Platform.current.convertExeName("ninja"))
 val anotherCustomCppLibraryBuildTasks = androidTargets.associateWith {
     val cmakeOutputDirectory = anotherCustomCppLibraryCmakeOutputDirectories[it]!!
     val libraryLocation = anotherCustomCppLibraryLocations[it]!!
@@ -70,13 +75,17 @@ cargo {
 }
 
 kotlin {
-    androidTarget()
+    androidTarget {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
+    }
     sourceSets {
         getByName("androidInstrumentedTest") {
             dependencies {
-                implementation("junit:junit:4.13.2")
-                implementation("androidx.test:core:1.5.0")
-                implementation("androidx.test:runner:1.5.2")
+                implementation(libs.junit)
+                implementation(libs.androidx.core)
+                implementation(libs.androidx.runner)
             }
         }
     }

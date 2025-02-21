@@ -57,12 +57,13 @@ fun ContentView(todoList: TodoList) {
                 )
             }
 
+            val entries = remember(clicked) { todoList.getEntries() }
             LazyColumn(
                 Modifier
                     .fillMaxSize()
                     .padding(8.dp),
             ) {
-                items(todoList.getEntries()) { entry ->
+                items(entries) { entry ->
                     ListItem(
                         headlineContent = { Text(entry.text) },
                         trailingContent = {

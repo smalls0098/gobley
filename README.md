@@ -467,6 +467,77 @@ Invoke the bindgen:
 uniffi-bindgen-kotlin-multiplatform --lib-file <path-to-library-file> --out-dir <output-directory> --crate <crate-name> <path-to-udl-file>
 ```
 
+# Linux Cross-Compilation on macOS
+
+If this is your first time cross-compiling a Linux binary on macOS, you may encounter an linker
+error reporting that the linker has received some unknown command-line arguments. That happens
+because you tried to link a Linux binary using the linker for Apple platforms.
+
+When you want to build your application or library for Linux on macOS, you have to use a dedicated
+cross-compilation linker for Linux. On macOS, there are two available options: GCC and Zig.
+The latter is much easier to install.
+
+You can download Zig [here](https://ziglang.org/download/). If you're using Homebrew, you can also
+install Zig as follows:
+
+```
+brew install zig
+```
+
+Next, we have to make Cargo use Zig when building libraries for Linux. First, find where `zig` is
+installed. If you installed Zig using Homebrew, `zig` is located in `/opt/homebrew/bin/zig` (Apple
+Silicon) or `/usr/local/bin/zig` (Intel). Make sure Zig is installed correctly.
+
+```
+/opt/homebrew/bin/zig version
+```
+
+We make two shell scripts that uses the `zig` command, named `x86_64-unknown-linux-gnu-cc.sh` and
+`aarch64-unknown-linux-gnu-cc.sh`. We recommend you to put them in
+`~/.cargo/x86_64-unknown-linux-gnu-cc.sh` and `~/.cargo/aarch64-unknown-linux-gnu-cc.sh`.
+
+In `x86_64-unknown-linux-gnu-cc.sh`, put the following:
+
+```
+#! /bin/sh
+<zig path> cc -target x86_64-linux-gnu "$@"
+```
+
+If you installed Zig with Homebrew on a Apple Silicon Mac, the content is:
+
+```
+#! /bin/sh
+/opt/homebrew/bin/zig -target x86_64-linux-gnu "$@"
+```
+
+Similarly, in `aarch64-unknown-linux-gnu-cc.sh`, put as follows:
+
+```
+#! /bin/sh
+<zig path> cc -target aarch64-linux-gnu "$@"
+```
+
+After making two script files, ensure that these files are executable.
+
+```
+chmod 555 ~/.cargo/x86_64-unknown-linux-gnu-cc.sh
+chmod 555 ~/.cargo/aarch64-unknown-linux-gnu-cc.sh
+```
+
+This is the final step. Put the paths to the script files in
+[the Cargo configuration file](https://doc.rust-lang.org/cargo/reference/config.html). The easiest
+option is to modify `~/.cargo/config.toml` as follows.
+
+```
+[target.x86_64-unknown-linux-gnu]
+linker = "/Users/<user name>/.cargo/x86_64-unknown-linux-gnu-cc.sh"
+
+[target.aarch64-unknown-linux-gnu]
+linker = "/Users/<user name>/.cargo/aarch64-unknown-linux-gnu-cc.sh"
+```
+
+You're ready to start building your library and application for Linux.
+
 # Versioning
 
 `uniffi_bindgen_kotlin_multiplatform` is versioned separately from `uniffi-rs`. UniFFI follows the
@@ -493,9 +564,19 @@ Here is how `uniffi_bindgen_kotlin_multiplatform` versions are tied to `uniffi-r
 
 # Build and use locally
 
-If you want to work on the bindgen or the Gradle plugin locally,
-you will have to do some additional Gradle configuration
-in order to use these local versions in your projects.
+If you want to work on the bindgen or the Gradle plugin locally, you will have to do some additional Gradle
+configuration in order to use these local versions in your projects. Since this project contains many
+unit tests and examples, you may want to opt out of building them. Use the following Gradle properties to
+choose tests and examples to turn on and off.
+
+| Gradle property name              | Projects        |
+|-----------------------------------|-----------------|
+| `uniffi-kmm.projects.gradleTests` | `:tests:gradle` |
+| `uniffi-kmm.projects.uniffiTests` | `:tests:uniffi` |
+| `uniffi-kmm.projects.examples`    | `:examples`     |
+
+These following properties are already in `gradle.properties`. Simply replace `=true` to `=false` to turn
+them off.
 
 ## Option 1 - Dynamically include this plugin in your project
 

@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.buildconfig)
 }
 
-val bindgenInfo = parseBindgenCargoToml(
+val bindgenInfo = BindgenInfo.fromCargoManifest(
     rootProject.layout.projectDirectory.file("../bindgen/Cargo.toml").asFile
 )
 
@@ -43,7 +43,7 @@ buildConfig {
 
     buildConfigField("String", "BINDGEN_VERSION", "\"${bindgenInfo.version}\"")
     buildConfigField("String", "BINDGEN_CRATE", "\"${bindgenInfo.name}\"")
-    buildConfigField("String", "BINDGEN_BIN", "\"${bindgenInfo.binName}\"")
+    buildConfigField("String", "BINDGEN_BIN", "\"${bindgenInfo.binaryName}\"")
 
     forClass("DependencyVersions") {
         buildConfigField("String", "OKIO", "\"${libs.versions.okio.get()}\"")

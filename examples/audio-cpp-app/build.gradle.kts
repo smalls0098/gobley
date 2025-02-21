@@ -1,5 +1,6 @@
 import io.gitlab.trixnity.gradle.RustHost
 import io.gitlab.trixnity.gradle.cargo.dsl.android
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
@@ -24,7 +25,11 @@ uniffi {
 }
 
 kotlin {
-    androidTarget()
+    androidTarget {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
+    }
     if (RustHost.Platform.MacOS.isCurrent) {
         arrayOf(
             iosArm64(),

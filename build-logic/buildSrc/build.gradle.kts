@@ -1,7 +1,9 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 dependencies {
-    implementation("net.peanuuutz.tomlkt:tomlkt:0.3.7")
+    implementation(libs.kotlinx.serialization.core)
+    implementation(libs.tomlkt)
 }

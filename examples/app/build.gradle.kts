@@ -1,5 +1,6 @@
 import io.gitlab.trixnity.gradle.RustHost
 import io.gitlab.trixnity.gradle.rust.dsl.useRustUpLinker
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
@@ -10,7 +11,12 @@ plugins {
 }
 
 kotlin {
-    androidTarget()
+    androidTarget {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
+    }
+    jvmToolchain(17)
     jvm()
     arrayOf(
         mingwX64(),
