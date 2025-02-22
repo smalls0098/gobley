@@ -84,6 +84,11 @@ fun KotlinNativeCompilation.useRustUpLinker() {
         compileTask.compilerOptions.freeCompilerArgs.add(
             "-Xoverride-konan-properties=linker.${RustHost.current.konanName}-${target.konanTarget.name}=$rustUpLinker"
         )
+        if (RustHost.current.konanName == target.konanTarget.name) {
+            compileTask.compilerOptions.freeCompilerArgs.add(
+                "-Xoverride-konan-properties=linker.${RustHost.current.konanName}=$rustUpLinker"
+            )
+        }
     }
 }
 

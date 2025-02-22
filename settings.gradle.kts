@@ -24,19 +24,19 @@ plugins {
 
 rootProject.name = "uniffi-kotlin-multiplatform-bindings"
 
-fun ExtraPropertiesExtension.propertyIsTrue(propertyName: String): Boolean? {
-    if (!has(propertyName)) return null
-    val propertyValue = this[propertyName]?.toString()?.lowercase() ?: return null
+fun ExtraPropertiesExtension.propertyIsTrue(propertyName: String, default: Boolean = true): Boolean {
+    if (!has(propertyName)) return default
+    val propertyValue = this[propertyName]?.toString()?.lowercase() ?: return default
     return propertyValue == "true" || propertyValue == "1"
 }
 
-if (ext.propertyIsTrue("uniffi-kmm.projects.gradleTests") == true) {
+if (ext.propertyIsTrue("uniffi-kmm.projects.gradleTests")) {
     include(":tests:gradle:android-linking")
     include(":tests:gradle:cargo-only")
     include(":tests:gradle:no-uniffi-block")
 }
 
-if (ext.propertyIsTrue("uniffi-kmm.projects.uniffiTests") == true) {
+if (ext.propertyIsTrue("uniffi-kmm.projects.uniffiTests")) {
     include(":tests:uniffi:callbacks")
     include(":tests:uniffi:chronological")
     include(":tests:uniffi:coverall")
@@ -44,12 +44,14 @@ if (ext.propertyIsTrue("uniffi-kmm.projects.uniffiTests") == true) {
     include(":tests:uniffi:docstring-proc-macro")
     include(":tests:uniffi:enum-types")
     include(":tests:uniffi:error-types")
-    include(":tests:uniffi:ext-types:custom-types")
-    include(":tests:uniffi:ext-types:ext-types")
-    include(":tests:uniffi:ext-types:ext-types-proc-macro")
-    include(":tests:uniffi:ext-types:http-headermap")
-    include(":tests:uniffi:ext-types:sub-lib")
-    include(":tests:uniffi:ext-types:uniffi-one")
+    if (ext.propertyIsTrue("uniffi-kmm.projects.examples")) {
+        include(":tests:uniffi:ext-types:custom-types")
+        include(":tests:uniffi:ext-types:ext-types")
+        include(":tests:uniffi:ext-types:ext-types-proc-macro")
+        include(":tests:uniffi:ext-types:http-headermap")
+        include(":tests:uniffi:ext-types:sub-lib")
+        include(":tests:uniffi:ext-types:uniffi-one")
+    }
     include(":tests:uniffi:futures")
     include(":tests:uniffi:keywords")
     include(":tests:uniffi:proc-macro")
@@ -60,7 +62,7 @@ if (ext.propertyIsTrue("uniffi-kmm.projects.uniffiTests") == true) {
     include(":tests:uniffi:type-limits")
 }
 
-if (ext.propertyIsTrue("uniffi-kmm.projects.examples") == true) {
+if (ext.propertyIsTrue("uniffi-kmm.projects.examples")) {
     include(":examples:app")
     include(":examples:arithmetic-procmacro")
     include(":examples:audio-cpp-app")

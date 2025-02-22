@@ -15,9 +15,18 @@ data class RustHost(val platform: Platform, val arch: Arch) : Serializable {
     enum class Platform {
         Windows, MacOS, Linux;
 
-        fun convertExeName(name: String): String = when (this) {
-            Windows -> "$name.exe"
+        fun convertExeName(name: String, extension: String = "exe"): String = when (this) {
+            Windows -> "$name.$extension"
             else -> name
+        }
+
+        fun chooseExeExtension(file: File): File {
+            if (this != Windows) return file
+            for (extension in arrayOf("bat", "cmd")) {
+                val convertedFile = File(convertExeName(file.path, extension))
+                if (convertedFile.exists()) return convertedFile
+            }
+            return File(convertExeName(file.path))
         }
 
         val isCurrent: Boolean
@@ -132,10 +141,8 @@ data class RustHost(val platform: Platform, val arch: Arch) : Serializable {
     val packageManagerInstallDirectories: List<String>
         get() = when (platform) {
             Platform.Windows -> listOf(
-                // TODO: check if the followings are correct
-                /* winget */ "${System.getenv("LOCALAPPDATA")}\\Microsoft\\WinGet\\Packages",
-                /* winget */ "${System.getenv("PROGRAMFILES")}\\WinGet\\Packages",
-                /* Chocolatey */ "${System.getenv("CSIDL_COMMON_APPDATA")}\\Chocolatey",
+                /* WinGet */ "${System.getenv("LOCALAPPDATA")}\\Microsoft\\WinGet\\Links",
+                /* Chocolatey */ "${System.getenv("ProgramData")}\\chocolatey\\bin",
             )
 
             Platform.MacOS -> listOf(

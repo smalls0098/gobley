@@ -19,9 +19,14 @@ actual object CargoOnlyLibrary {
         val isWindows = System.getProperty("os.name").startsWith("Windows")
         val librarySuffix = ".dll".takeIf { isWindows }
         val libraryFile = File.createTempFile("uniffi_kmm_fixture_gradle_cargo_only", librarySuffix)
-        CargoOnlyLibrary::class.java.classLoader!!.getResourceAsStream("$resourcePrefix/$mappedLibraryName")!!.use {
-            it.copyTo(libraryFile.outputStream())
-        }
+
+        CargoOnlyLibrary::class.java.classLoader!!
+            .getResourceAsStream("$resourcePrefix/$mappedLibraryName")!!
+            .use { inputStream ->
+                libraryFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
 
         @Suppress("UnsafeDynamicallyLoadedCode")
         Runtime.getRuntime().load(libraryFile.absolutePath)

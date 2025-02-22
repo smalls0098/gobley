@@ -484,5 +484,5 @@ private fun ProjectLayout.outputCacheFile(task: Task, propertyName: String): Pro
     val trimmedPropertyName = propertyName
         .substringBeforeLast("File")
         .substringBeforeLast("Cache")
-    return buildDirectory.file("taskOutputCache/$task/$trimmedPropertyName")
+    return buildDirectory.file("taskOutputCache/${task.name}/$trimmedPropertyName")
 }

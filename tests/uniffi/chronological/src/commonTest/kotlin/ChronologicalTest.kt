@@ -18,39 +18,69 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
 
+// Windows has a system clock resolution of 100 nanoseconds.
+expect val isWindows: Boolean
+
 class ChronologicalTest {
     // Test passing timestamp and duration while returning timestamp
     @Test
     fun testAdd() {
-        add(
-            Instant.fromEpochSeconds(100, 100),
-            1.seconds + 1.nanoseconds,
-        ) shouldBe Instant.fromEpochSeconds(101, 101)
+        if (isWindows) {
+            add(
+                Instant.fromEpochSeconds(100, 10000),
+                1.seconds + 100.nanoseconds,
+            ) shouldBe Instant.fromEpochSeconds(101, 10100)
+        } else {
+            add(
+                Instant.fromEpochSeconds(100, 100),
+                1.seconds + 1.nanoseconds,
+            ) shouldBe Instant.fromEpochSeconds(101, 101)
+        }
     }
 
     // Test passing timestamp while returning duration
     @Test
     fun testDiff() {
-        diff(
-            Instant.fromEpochSeconds(101, 101),
-            Instant.fromEpochSeconds(100, 100),
-        ) shouldBe (1.seconds + 1.nanoseconds)
+        if (isWindows) {
+            diff(
+                Instant.fromEpochSeconds(101, 10100),
+                Instant.fromEpochSeconds(100, 10000),
+            ) shouldBe (1.seconds + 100.nanoseconds)
+        } else {
+            diff(
+                Instant.fromEpochSeconds(101, 101),
+                Instant.fromEpochSeconds(100, 100),
+            ) shouldBe (1.seconds + 1.nanoseconds)
+        }
     }
 
+    // Test pre-epoch timestamps
     @Test
     fun testPreEpochTimestamps() {
-        // Test pre-epoch timestamps
-        add(
-            Instant.parse("1955-11-05T00:06:00.283000001Z"),
-            1.seconds + 1.nanoseconds,
-        ) shouldBe Instant.parse("1955-11-05T00:06:01.283000002Z")
+        if (isWindows) {
+            add(
+                Instant.parse("1955-11-05T00:06:00.283000100Z"),
+                1.seconds + 100.nanoseconds,
+            ) shouldBe Instant.parse("1955-11-05T00:06:01.283000200Z")
+        } else {
+            add(
+                Instant.parse("1955-11-05T00:06:00.283000001Z"),
+                1.seconds + 1.nanoseconds,
+            ) shouldBe Instant.parse("1955-11-05T00:06:01.283000002Z")
+        }
     }
 
     // Test exceptions are propagated
     @Test
     fun testChronologicalException() {
-        shouldThrow<ChronologicalException> {
-            diff(Instant.fromEpochSeconds(100), Instant.fromEpochSeconds(101))
+        if (isWindows) {
+            shouldThrow<ChronologicalException> {
+                diff(Instant.fromEpochSeconds(10000), Instant.fromEpochSeconds(10100))
+            }
+        } else {
+            shouldThrow<ChronologicalException> {
+                diff(Instant.fromEpochSeconds(100), Instant.fromEpochSeconds(101))
+            }
         }
     }
 
@@ -59,12 +89,20 @@ class ChronologicalTest {
     fun testInstantUpperBound() {
         add(Instant.MAX, Duration.ZERO) shouldBe Instant.MAX
 
-        // Test Instant is clamped to the upper bound, and don't check for the exception as in upstream.
-        // While Java's Instant.plus throws DateTimeException for overflow, kotlinx-datetime Instant just coerces the
-        // value to the upper bound.
-        add(Instant.MAX, 1.seconds) shouldBe Instant.MAX
+        if (isWindows) {
+            // Rust uses an allowed value range for SystemTime smaller than that of Instant on Windows.
+            // Check for the overflow exception.
+            shouldThrow<ChronologicalException.TimeOverflow> {
+                add(Instant.MAX, 1.seconds)
+            }
+        } else {
+            // Test Instant is clamped to the upper bound, and don't check for the exception as in upstream.
+            // While Java's Instant.plus throws DateTimeException for overflow, kotlinx-datetime Instant just coerces the
+            // value to the upper bound.
+            add(Instant.MAX, 1.seconds) shouldBe Instant.MAX
+        }
 
-        // Upstream checks for the exception
+        // Upstream checks for Java's exception
         // try {
         //     add(Instant.MAX, 1.seconds)
         //     throw RuntimeException("Should have thrown a DateTimeException exception!")
@@ -100,7 +138,22 @@ class ChronologicalTest {
 
 
 // This is to mock java.time.Instant.MAX, which does not exist as a public API in kotlinx-datetime.
-// Since `Instant.fromEpochSeconds` clamps the given value to the platform-specific boundaries, passing `Long.MAX_VALUE`
-// is okay to get the maximum value.
 private val Instant.Companion.MAX: Instant
-    get() = fromEpochSeconds(Long.MAX_VALUE, 999_999_999)
+    get() = if (isWindows) {
+        // Rust's SystemTime uses Windows API's FILETIME on Windows, which is a 8-byte structure holding
+        // a 100-nanosecond tick value since January 1, 1601 (UTC) and has the maximum value of 2^63 - 1.
+        // Therefore, the maximum allowed value of Instant by Rust's SystemTime on Windows is:
+        //
+        // SECONDS = (Long.MAX_VALUE - UNIX_EPOCH) / 10_000_000 = 910692730084
+        // NANOSECONDS = (Long.MAX_VALUE - UNIX_EPOCH) % 10_000_000 * 100 = 477_580_700
+        //
+        // where UNIX_EPOCH = 116444736000000000, which is 369 = 1970 - 1601 years.
+        val unixEpoch = 116444736000000000
+        val seconds = (Long.MAX_VALUE - unixEpoch) / 10_000_000
+        val nanoseconds = (Long.MAX_VALUE - unixEpoch) % 10_000_000 * 100
+        fromEpochSeconds(seconds, nanoseconds)
+    } else {
+        // Since `Instant.fromEpochSeconds` clamps the given value to the platform-specific boundaries,
+        // passing `Long.MAX_VALUE` is okay to get the maximum value.
+        fromEpochSeconds(Long.MAX_VALUE, 999_999_999)
+    }

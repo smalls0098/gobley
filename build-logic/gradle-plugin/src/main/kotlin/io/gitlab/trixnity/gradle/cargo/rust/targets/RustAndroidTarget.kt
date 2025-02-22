@@ -75,12 +75,10 @@ enum class RustAndroidTarget(
         val actualNdkRoot = tryRetrieveNdkRoot(sdkRoot, ndkVersion, ndkRoot)!!
         val toolchainBinaryDir = ndkToolchainDir(sdkRoot, ndkVersion, ndkRoot)!!.resolve("bin")
         val currentPlatform = RustHost.current.platform
-        val clang =
-            toolchainBinaryDir.resolve(currentPlatform.convertExeName("${ndkLlvmTriple}$apiLevel-clang"))
-        val clangCpp =
-            toolchainBinaryDir.resolve(currentPlatform.convertExeName("${ndkLlvmTriple}$apiLevel-clang++"))
-        val ar = toolchainBinaryDir.resolve(currentPlatform.convertExeName("llvm-ar"))
-        val ranlib = toolchainBinaryDir.resolve(currentPlatform.convertExeName("llvm-ranlib"))
+        val clang = currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("${ndkLlvmTriple}$apiLevel-clang"))
+        val clangCpp = currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("${ndkLlvmTriple}$apiLevel-clang++"))
+        val ar = currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("llvm-ar"))
+        val ranlib = currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("llvm-ranlib"))
         return mapOf(
             "ANDROID_HOME" to sdkRoot,
             "ANDROID_NDK_HOME" to actualNdkRoot,

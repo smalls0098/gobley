@@ -197,9 +197,8 @@ internal abstract class Command @Inject internal constructor(
         for (path in (additionalPaths + environmentPath).paths) {
             path.resolve(command).run {
                 if (exists()) return@map absolutePath
-            }
-            path.resolve(RustHost.Platform.current.convertExeName(command)).run {
-                if (exists()) return@map absolutePath
+                val convertedFile = RustHost.Platform.current.chooseExeExtension(this)
+                if (convertedFile.exists()) return@map convertedFile.absolutePath
             }
         }
         command
