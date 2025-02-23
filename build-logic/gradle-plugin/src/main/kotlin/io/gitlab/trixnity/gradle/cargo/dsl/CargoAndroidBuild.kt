@@ -13,6 +13,7 @@ import javax.inject.Inject
 /**
  * Contains settings for Rust builds for Android.
  */
+@Suppress("LeakingThis")
 abstract class CargoAndroidBuild @Inject constructor(
     project: Project,
     rustTarget: RustAndroidTarget,
@@ -22,5 +23,8 @@ abstract class CargoAndroidBuild @Inject constructor(
     rustTarget,
     extension,
     CargoAndroidBuildVariant::class,
-), CargoMobileBuild<CargoAndroidBuildVariant>,
-    HasDynamicLibraries
+), CargoMobileBuild<CargoAndroidBuildVariant>, HasDynamicLibraries {
+    init {
+        embedRustLibrary.convention(true)
+    }
+}

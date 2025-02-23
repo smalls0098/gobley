@@ -277,7 +277,7 @@ class CargoPlugin : Plugin<Project> {
             it.libraryPathsCacheFile.set(projectLayout.outputCacheFile(it, "libraryPathsCacheFile"))
         }
 
-        val resourcePrefix = cargoBuildVariant.build.resourcePrefix.orNull?.takeIf(String::isNotEmpty)
+        val resourcePrefix = cargoBuildVariant.resourcePrefix.orNull?.takeIf(String::isNotEmpty)
         val resourceDirectory = layout.buildDirectory
             .dir("intermediates/rust/${cargoBuildVariant.rustTarget.rustTriple}/${cargoBuildVariant.variant}")
         val copyDestination =
@@ -299,7 +299,7 @@ class CargoPlugin : Plugin<Project> {
             dependsOn(buildTask, findDynamicLibrariesTask)
         }
 
-        if (cargoBuildVariant.build.jvm.get() && cargoBuildVariant.variant == cargoBuildVariant.build.jvmVariant.get()) {
+        if (cargoBuildVariant.embedRustLibrary.get() && cargoBuildVariant.variant == cargoBuildVariant.build.jvmVariant.get()) {
             kotlinTarget.compilations.getByName("main").defaultSourceSet {
                 resources.srcDir(resourceDirectory)
             }
@@ -310,7 +310,7 @@ class CargoPlugin : Plugin<Project> {
             }
         }
 
-        if (androidTarget != null && cargoBuildVariant.build.androidUnitTest.get()) {
+        if (androidTarget != null && cargoBuildVariant.androidUnitTest.get()) {
             androidExtension.sourceSets { sourceSets ->
                 val testSourceSet = sourceSets.getByVariant("test", cargoBuildVariant.variant)
                 testSourceSet.resources.srcDir(resourceDirectory)
@@ -386,6 +386,9 @@ class CargoPlugin : Plugin<Project> {
         }
 
         if (!cargoExtension.androidTargetsToBuild.get().contains(cargoBuildVariant.rustTarget))
+            return
+
+        if (!cargoBuildVariant.embedRustLibrary.get())
             return
 
         val copyDestination =

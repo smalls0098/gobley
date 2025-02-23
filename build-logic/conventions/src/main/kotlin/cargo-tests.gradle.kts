@@ -11,7 +11,7 @@ plugins {
 
 cargo {
     builds.jvm {
-        jvm = (rustTarget == RustHost.current.rustTarget)
+        embedRustLibrary = (rustTarget == RustHost.current.rustTarget)
         resourcePrefix = "jvm"
     }
 }

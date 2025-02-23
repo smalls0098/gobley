@@ -261,8 +261,9 @@ current system or not. The list of such targets by the build host is as follows.
 | Linux        | ✅       | ✅     | ✅     |
 | Visual C++   | ✅       | ❌     | ❌     |
 
-To build for specific targets only, you can configure that using the `jvm` property. For example, to build a shared
-library for the current build host only, set this property to `rustTarget == RustHost.current.rustTarget`.
+To build for specific targets only, you can configure that using the `embedRustLibrary` property. For example, to
+build a shared library for the current build host only, set this property to
+`rustTarget == RustHost.current.rustTarget`.
 
 ```kotlin
 import io.gitlab.trixnity.gradle.RustHost
@@ -270,14 +271,14 @@ import io.gitlab.trixnity.gradle.cargo.dsl.*
 
 cargo {
     builds.jvm {
-        jvm = (rustTarget == RustHost.current.rustTarget)
+        embedRustLibrary = (rustTarget == RustHost.current.rustTarget)
     }
 }
 ```
 
 On Windows, both MinGW and Visual C++ can generate DLLs. By default, the Cargo plugin doesn't invoke the MinGW build
-for JVM when Visual C++ is available. To override this behavior, use the `jvm` property like the following. Note that
-Windows on ARM is not available with MinGW.
+for JVM when Visual C++ is available. To override this behavior, use the `embedRustLibrary` property like the
+following. Note that Windows on ARM is not available with MinGW.
 
 ```kotlin
 import io.gitlab.trixnity.gradle.RustHost
@@ -288,14 +289,43 @@ cargo {
     builds.jvm {
         if (RustHost.Platform.Windows.isCurrent) {
             when (rustTarget) {
-                RustWindowsTarget.X64 -> jvm = false
-                RustPosixTarget.MinGWX64 -> jvm = true
+                RustWindowsTarget.X64 -> embedRustLibrary = false
+                RustPosixTarget.MinGWX64 -> embedRustLibrary = true
                 else -> {}
             }
         }
     }
 }
 ```
+
+`embedRustLibrary` is also used when you use [the external types feature](https://mozilla.github.io/uniffi-rs/udl/ext_types.html)
+in your project. Rust statically links all the crates unless you specify the library crate's kind as `dylib`. So, the
+final Kotlin library does not have to include shared libraries built from every crate. Suppose you have two crates, `foo`, and
+`bar`, where `foo` exposes the external types and `bar` uses types in `foo`. Since when building `bar.dll`, `libbar.dylib`, or
+`libbar.so`, the `foo` crate is also included in `bar`, you don't have to put `foo.dll`, `libfoo.dylib`, or `libfoo.so`
+inside your Kotlin library. So, to configure that, put the followings in `foo/build.gradle.kts`:
+
+```
+cargo {
+    builds.android {
+        embedRustLibrary = false
+    }
+    builds.jvm {
+        embedRustLibrary = false
+    }
+}
+```
+
+and in `foo/uniffi.toml`:
+
+```
+# The cdylib_name used in `bar/uniffi.toml`
+cdylib_name = "bar"
+```
+
+The JVM `loadIndirect()` function in the bindings allow users to override the `cdylib_name` value using the
+`uniffi.component.<namespace name>.libraryOverride` system property as well. See the
+[`:tests:uniffi:ext-types:ext-types`](./tests/uniffi/ext-types/ext-types) test to see how this works. 
 
 Android local unit tests requires JVM targets to be built, as they run in the host machine's JVM. The Cargo plugin
 automatically copies the Rust shared library targeting the host machine into Android local unit tests. It also finds
@@ -520,7 +550,7 @@ kotlin {
 
 The bindings generator (the "bindgen") is the program that generates Kotlin source codes connecting your Kotlin code
 to your Rust code. In most cases, [the UniFFI Gradle plugin](#the-uniffi-plugin) handles the bindings generation, so you
-don't have to know the every detail of the bindgen. Still, you can directly use this bindgen if you have more
+don't have to know all the details of the bindgen. Still, you can directly use this bindgen if you have more
 complicated build system.
 
 The minimum Rust version required to install `uniffi_bindgen_kotlin_multiplatform` is `1.72`. Newer Rust versions should

@@ -24,6 +24,9 @@ abstract class CargoWindowsBuildVariant @Inject constructor(
     init {
         dynamicLibraries.addAll(build.dynamicLibraries)
         dynamicLibrarySearchPaths.addAll(build.dynamicLibrarySearchPaths)
+        embedRustLibrary.convention(build.embedRustLibrary)
+        resourcePrefix.convention(build.resourcePrefix)
+        androidUnitTest.convention(build.androidUnitTest)
     }
 
     override val findDynamicLibrariesTaskProvider = project.tasks.register<FindDynamicLibrariesTask>({

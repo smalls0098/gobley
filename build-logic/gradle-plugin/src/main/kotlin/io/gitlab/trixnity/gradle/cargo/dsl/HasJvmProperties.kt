@@ -8,7 +8,7 @@ package io.gitlab.trixnity.gradle.cargo.dsl
 
 import org.gradle.api.provider.Property
 
-interface HasJvmProperties : HasJvmVariant {
+interface HasJvmProperties : HasJvmVariant, HasDynamicLibraries {
     /**
      * The resource prefix to use. In the `.jar` file, the Rust dynamic library will be located in
      * `<resource prefix>/<dynamic library>`. This defaults to `RustJvmTarget.jnaResourcePrefix`. The library then can
@@ -17,12 +17,6 @@ interface HasJvmProperties : HasJvmVariant {
      * will be copied to the root of the `.jar` file.
      */
     val resourcePrefix: Property<String>
-
-    /**
-     * Determines whether to include the Rust dynamic library in the resulting `.jar` file. Defaults to `true`. When
-     * the host does not support building for this target, this property is ignored and considered `false`.
-     */
-    val jvm: Property<Boolean>
 
     /**
      * Determines whether to use the Rust dynamic library in Android local unit tests. Android local unit tests runs on

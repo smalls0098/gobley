@@ -10,7 +10,7 @@ plugins {
 
 cargo {
     builds.jvm {
-        jvm.set(rustTarget == RustHost.current.rustTarget)
+        embedRustLibrary.set(rustTarget == RustHost.current.rustTarget)
     }
 }
 

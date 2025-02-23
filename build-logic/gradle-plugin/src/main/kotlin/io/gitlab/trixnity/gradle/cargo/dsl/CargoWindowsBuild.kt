@@ -26,8 +26,10 @@ abstract class CargoWindowsBuild @Inject constructor(
     CargoWindowsBuildVariant::class,
 ), CargoJvmBuild<CargoWindowsBuildVariant> {
     init {
+        embedRustLibrary.convention(true)
         resourcePrefix.convention(rustTarget.jnaResourcePrefix)
-        jvm.convention(true)
-        androidUnitTest.convention(rustTarget == RustHost.current.rustTarget)
+        androidUnitTest.convention(
+            embedRustLibrary.map { it && rustTarget == RustHost.current.rustTarget }
+        )
     }
 }
