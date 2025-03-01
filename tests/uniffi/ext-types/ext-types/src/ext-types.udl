@@ -49,10 +49,10 @@ typedef extern UniffiOneProcMacroType;
 typedef extern Guid;
 
 // And re-use the `custom-types` example - this exposes `Url` and `Handle`
-[External="uniffi_kmm_example_custom_types"]
+[External="gobley_example_custom_types"]
 typedef extern Url;
 
-[External="uniffi_kmm_example_custom_types"]
+[External="gobley_example_custom_types"]
 typedef extern Handle;
 
 // Here are some different kinds of "external" types - the types are described

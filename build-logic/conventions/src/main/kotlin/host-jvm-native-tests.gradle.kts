@@ -1,10 +1,10 @@
-import io.gitlab.trixnity.gradle.RustHost
-import io.gitlab.trixnity.gradle.rust.dsl.hostNativeTarget
-import io.gitlab.trixnity.gradle.rust.dsl.useRustUpLinker
+import dev.gobley.gradle.RustHost
+import dev.gobley.gradle.rust.dsl.hostNativeTarget
+import dev.gobley.gradle.rust.dsl.useRustUpLinker
 import org.gradle.accessors.dm.*
 
 plugins {
-    id("io.gitlab.trixnity.rust.kotlin.multiplatform")
+    id("dev.gobley.rust")
     kotlin("multiplatform")
     kotlin("plugin.atomicfu")
 }

@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.examples.app
+package dev.gobley.uniffi.examples.app
 
 import kotlinx.cinterop.*
 import platform.posix.memcpy

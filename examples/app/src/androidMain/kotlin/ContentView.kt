@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.examples.app
+package dev.gobley.uniffi.examples.app
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,10 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import io.gitlab.trixnity.uniffi.examples.arithmeticpm.add
-import io.gitlab.trixnity.uniffi.examples.arithmeticpm.sub
-import io.gitlab.trixnity.uniffi.examples.todolist.TodoEntry
-import io.gitlab.trixnity.uniffi.examples.todolist.TodoList
+import dev.gobley.uniffi.examples.arithmeticpm.add
+import dev.gobley.uniffi.examples.arithmeticpm.sub
+import dev.gobley.uniffi.examples.todolist.TodoEntry
+import dev.gobley.uniffi.examples.todolist.TodoList
 
 @Composable
 fun ContentView(todoList: TodoList) {

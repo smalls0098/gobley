@@ -1,11 +1,11 @@
 [package]
-name = "uniffi-kmm-fixture-coverall"
+name = "gobley-fixture-coverall"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [lib]
-name = "uniffi_kmm_fixture_coverall"
+name = "gobley_fixture_coverall"
 crate-type = ["cdylib", "staticlib"]
 path = "src/commonMain/rust/lib.rs"
 
@@ -15,4 +15,4 @@ once_cell = { workspace = true }
 thiserror = { workspace = true }
 
 [build-dependencies]
-uniffi-kmm-fixture-build-common = { path = "../../build-common" }
+gobley-fixture-build-common = { path = "../../build-common" }

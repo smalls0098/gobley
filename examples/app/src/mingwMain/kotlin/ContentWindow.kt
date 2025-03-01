@@ -4,17 +4,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.examples.app
+package dev.gobley.uniffi.examples.app
 
-import io.gitlab.trixnity.uniffi.examples.app.windows.Window
-import io.gitlab.trixnity.uniffi.examples.app.windows.controls.ButtonControl
-import io.gitlab.trixnity.uniffi.examples.app.windows.controls.EditControl
-import io.gitlab.trixnity.uniffi.examples.app.windows.controls.ListControl
-import io.gitlab.trixnity.uniffi.examples.app.windows.controls.TextControl
-import io.gitlab.trixnity.uniffi.examples.arithmeticpm.add
-import io.gitlab.trixnity.uniffi.examples.arithmeticpm.sub
-import io.gitlab.trixnity.uniffi.examples.todolist.TodoEntry
-import io.gitlab.trixnity.uniffi.examples.todolist.TodoList
+import dev.gobley.uniffi.examples.app.windows.Window
+import dev.gobley.uniffi.examples.app.windows.controls.ButtonControl
+import dev.gobley.uniffi.examples.app.windows.controls.EditControl
+import dev.gobley.uniffi.examples.app.windows.controls.ListControl
+import dev.gobley.uniffi.examples.app.windows.controls.TextControl
+import dev.gobley.uniffi.examples.arithmeticpm.add
+import dev.gobley.uniffi.examples.arithmeticpm.sub
+import dev.gobley.uniffi.examples.todolist.TodoEntry
+import dev.gobley.uniffi.examples.todolist.TodoList
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.windows.*
 

@@ -1,11 +1,15 @@
-# UniFFI Kotlin Multiplatform bindings
+# Gobley
 
-[![License](https://img.shields.io/gitlab/license/trixnity/uniffi-kotlin-multiplatform-bindings)](https://gitlab.com/trixnity/uniffi-kotlin-multiplatform-bindings/-/blob/main/LICENSE)
-[![Crates.io](https://img.shields.io/crates/v/uniffi_bindgen_kotlin_multiplatform)](https://crates.io/crates/uniffi_bindgen_kotlin_multiplatform)
-[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/io.gitlab.trixnity.uniffi.kotlin.multiplatform)](https://plugins.gradle.org/plugin/io.gitlab.trixnity.uniffi.kotlin.multiplatform)
-[![Gitlab Build Status](https://img.shields.io/gitlab/pipeline-status/trixnity%2Funiffi-kotlin-multiplatform-bindings)](https://gitlab.com/trixnity/uniffi-kotlin-multiplatform-bindings/-/pipelines/latest)
+[![License](https://img.shields.io/github/license/gobley/gobley
+)](https://github.com/gobley/gobley/blob/main/LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/gobley-uniffi-bindgen)](https://crates.io/crates/gobley-uniffi-bindgen)
+[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/dev.gobley.uniffi)](https://plugins.gradle.org/plugin/dev.gobley.uniffi)
+![Gitlab Build Status](https://img.shields.io/github/check-runs/gobley/gobley/main
+)
 
-This project contains Kotlin Multiplatform bindings generation for [UniFFI](https://github.com/mozilla/uniffi-rs).
+Kotlin Multiplatform bindings generation for [UniFFI](https://github.com/mozilla/uniffi-rs).
+This project was forked from [UniFFI Kotlin Multiplatform bindings](https://gitlab.com/trixnity/uniffi-kotlin-multiplatform-bindings).
+Since the original project is no longer maintained, active development now continues here.
 
 Currently, Android, Kotlin/JVM, and Kotlin/Native are supported. WASM is not supported yet.
 
@@ -69,20 +73,20 @@ reboot. Try restart your Mac if you still have the disk space issue after removi
 
 This project contains three Gradle plugins:
 
-- The Cargo plugin (`io.gitlab.trixnity.cargo.kotlin.multiplatform`)
-- The UniFFI plugin (`io.gitlab.trixnity.uniffi.kotlin.multiplatform`)
-- The Rust plugin (`io.gitlab.trixnity.rust.kotlin.multiplatform`)
+- The Cargo plugin (`dev.gobley.cargo`)
+- The UniFFI plugin (`dev.gobley.uniffi`)
+- The Rust plugin (`dev.gobley.rust`)
 
 ### The Cargo plugin
 
 The Cargo plugin is responsible for building and linking the Rust library to your Kotlin project. You can use it even
 when you are not using UniFFI. If the `Cargo.toml` is located in the project root, you can simply apply the
-`io.gitlab.trixnity.cargo.kotlin.multiplatform` the plugin.
+`dev.gobley.cargo` the plugin.
 
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("io.gitlab.trixnity.cargo.kotlin.multiplatform") version "0.1.0"
+    id("dev.gobley.cargo") version "0.1.0"
 }
 ```
 
@@ -111,7 +115,7 @@ customized [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.h
 you can configure them in the `cargo {}` block as well.
 
 ```kotlin
-import io.gitlab.trixnity.gradle.cargo.rust.profiles.CargoProfile
+import dev.gobley.gradle.cargo.rust.profiles.CargoProfile
 
 cargo {
     features.addAll("foo", "bar")
@@ -169,7 +173,7 @@ targets, you can configure it with the `jvmVariant` or `nativeVariant` propertie
 default to `Variant.Debug`.
 
 ```kotlin
-import io.gitlab.trixnity.gradle.Variant
+import dev.gobley.gradle.Variant
 
 cargo {
     jvmVariant = Variant.Release
@@ -224,7 +228,7 @@ need finer control, you can directly configure the properties of the build task.
 `builds {}` block.
 
 ```kotlin
-import io.gitlab.trixnity.gradle.cargo.dsl.*
+import dev.gobley.gradle.cargo.dsl.*
 
 cargo {
     builds {
@@ -266,8 +270,8 @@ build a shared library for the current build host only, set this property to
 `rustTarget == RustHost.current.rustTarget`.
 
 ```kotlin
-import io.gitlab.trixnity.gradle.RustHost
-import io.gitlab.trixnity.gradle.cargo.dsl.*
+import dev.gobley.gradle.RustHost
+import dev.gobley.gradle.cargo.dsl.*
 
 cargo {
     builds.jvm {
@@ -281,9 +285,9 @@ for JVM when Visual C++ is available. To override this behavior, use the `embedR
 following. Note that Windows on ARM is not available with MinGW.
 
 ```kotlin
-import io.gitlab.trixnity.gradle.RustHost
-import io.gitlab.trixnity.gradle.cargo.rust.targets.RustWindowsTarget
-import io.gitlab.trixnity.gradle.cargo.dsl.*
+import dev.gobley.gradle.RustHost
+import dev.gobley.gradle.cargo.rust.targets.RustWindowsTarget
+import dev.gobley.gradle.cargo.dsl.*
 
 cargo {
     builds.jvm {
@@ -334,8 +338,8 @@ directly or indirectly use the Cargo project. If you want to include shared libr
 can control that using the `androidUnitTest` property.
 
 ```kotlin
-import io.gitlab.trixnity.gradle.cargo.dsl.*
-import io.gitlab.trixnity.gradle.cargo.rust.targets.RustWindowsTarget
+import dev.gobley.gradle.cargo.dsl.*
+import dev.gobley.gradle.cargo.rust.targets.RustWindowsTarget
 
 cargo {
     builds.jvm {
@@ -449,13 +453,13 @@ The UniFFI plugin is responsible for generating Kotlin bindings from your Rust p
 UniFFI plugin to build bindings from the resulting library binary.
 
 ```kotlin
-import io.gitlab.trixnity.gradle.Variant
-import io.gitlab.trixnity.gradle.cargo.rust.targets.RustAndroidTarget
+import dev.gobley.gradle.Variant
+import dev.gobley.gradle.cargo.rust.targets.RustAndroidTarget
 
 plugins {
     kotlin("multiplatform")
-    id("io.gitlab.trixnity.cargo.kotlin.multiplatform") version "0.1.0"
-    id("io.gitlab.trixnity.uniffi.kotlin.multiplatform") version "0.1.0"
+    id("dev.gobley.cargo") version "0.1.0"
+    id("dev.gobley.uniffi") version "0.1.0"
 }
 
 uniffi {
@@ -507,7 +511,7 @@ plugins.
 
 ```kotlin
 plugins {
-    id("io.gitlab.trixnity.rust.kotlin.multiplatform") version "0.1.0"
+    id("dev.gobley.rust") version "0.1.0"
 }
 
 rust {
@@ -523,7 +527,7 @@ and `KotlinNativeCompilation.useRustUpLinker`.
 build host is not supported yet.
 
 ```kotlin
-import io.gitlab.trixnity.gradle.cargo.dsl.*
+import dev.gobley.gradle.cargo.dsl.*
 
 kotlin {
     hostNativeTarget()
@@ -537,7 +541,7 @@ with `rustup`, so you can use this when your Rust project emits a linker flag th
 LLVM linker.
 
 ```kotlin
-import io.gitlab.trixnity.gradle.cargo.dsl.*
+import dev.gobley.gradle.cargo.dsl.*
 
 kotlin {
     iosArm64().compilations.getByName("main") {
@@ -1040,9 +1044,9 @@ choose tests and examples to turn on and off.
 
 | Gradle property name              | Projects                                   |
 |-----------------------------------|--------------------------------------------|
-| `uniffi-kmm.projects.gradleTests` | `:tests:gradle`                            |
-| `uniffi-kmm.projects.uniffiTests` | `:tests:uniffi` & `:examples:custom-types` |
-| `uniffi-kmm.projects.examples`    | `:examples`                                |
+| `gobley.projects.gradleTests` | `:tests:gradle`                            |
+| `gobley.projects.uniffiTests` | `:tests:uniffi` & `:examples:custom-types` |
+| `gobley.projects.examples`    | `:examples`                                |
 
 These following properties are already in `gradle.properties`. Simply replace `=true` to `=false` to turn
 them off.
@@ -1073,13 +1077,13 @@ pluginManagement {
     includeBuild("../uniffi-kotlin-multiplatform-bindings/build-logic")
     // ...
     plugins {
-        // comment out id("io.gitlab.trixnity.uniffi.kotlin.multiplatform") if you have it here
+        // comment out id("dev.gobley.uniffi") if you have it here
     }
 }
 // ...
 includeBuild("../uniffi-kotlin-multiplatform-bindings/build-logic") {
     dependencySubstitution {
-        substitute(module("io.gitlab.trixnity.uniffi.kotlin.multiplatform:gradle-plugin"))
+        substitute(module("dev.gobley.uniffi:gradle-plugin"))
             .using(project(":gradle-plugin"))
     }
 }
@@ -1091,7 +1095,7 @@ Add the Gradle plugin to the Gradle build file.
 // build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("io.gitlab.trixnity.uniffi.kotlin.multiplatform")
+    id("dev.gobley.uniffi")
     // ...
 }
 ```
@@ -1136,6 +1140,6 @@ this repository on your computer.
 
 ```kotlin
 uniffi {
-    bindgenFromGitTag("https://gitlab.com/trixnity/uniffi-kotlin-multiplatform-bindings", "v0.1.0")
+    bindgenFromGitTag("https://github.com/gobley/gobley", "v0.1.0")
 }
 ```

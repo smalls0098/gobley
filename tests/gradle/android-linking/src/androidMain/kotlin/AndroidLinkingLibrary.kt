@@ -4,11 +4,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.tests.gradle.androidlinking
+package dev.gobley.uniffi.tests.gradle.androidlinking
 
 object AndroidLinkingLibrary {
     init {
-        System.loadLibrary("uniffi_kmm_fixture_gradle_android_linking")
+        System.loadLibrary("gobley_fixture_gradle_android_linking")
     }
 
     @JvmStatic

@@ -1,11 +1,11 @@
-import io.gitlab.trixnity.gradle.RustHost
-import io.gitlab.trixnity.gradle.rust.dsl.useRustUpLinker
+import dev.gobley.gradle.RustHost
+import dev.gobley.gradle.rust.dsl.useRustUpLinker
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     kotlin("multiplatform")
-    id("io.gitlab.trixnity.rust.kotlin.multiplatform")
+    id("dev.gobley.rust")
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
 }
@@ -22,7 +22,7 @@ kotlin {
         mingwX64(),
     ).forEach {
         it.binaries.executable {
-            entryPoint = "io.gitlab.trixnity.uniffi.examples.app.main"
+            entryPoint = "dev.gobley.uniffi.examples.app.main"
         }
         it.compilations.configureEach {
             useRustUpLinker()
@@ -43,7 +43,7 @@ kotlin {
     //     linuxArm64(),
     // ).forEach {
     //     it.binaries.executable {
-    //         entryPoint = "io.gitlab.trixnity.uniffi.examples.app.main"
+    //         entryPoint = "dev.gobley.uniffi.examples.app.main"
     //     }
     //     it.compilations.getByName("main") {
     //         cinterops.register("gtk") {
@@ -59,7 +59,7 @@ kotlin {
             macosX64(),
         ).forEach {
             it.binaries.executable {
-                entryPoint = "io.gitlab.trixnity.uniffi.examples.app.main"
+                entryPoint = "dev.gobley.uniffi.examples.app.main"
             }
         }
 
@@ -73,7 +73,7 @@ kotlin {
             it.binaries.framework {
                 baseName = "ExamplesAppKotlin"
                 isStatic = true
-                binaryOption("bundleId", "io.gitlab.trixnity.uniffi.examples.app.kotlin")
+                binaryOption("bundleId", "dev.gobley.uniffi.examples.app.kotlin")
                 binaryOption("bundleVersion", "0")
                 export(project(":examples:arithmetic-procmacro"))
                 export(project(":examples:todolist"))
@@ -113,11 +113,11 @@ composeCompiler {
 }
 
 android {
-    namespace = "io.gitlab.trixnity.uniffi.examples.app"
+    namespace = "dev.gobley.uniffi.examples.app"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "io.gitlab.trixnity.uniffi.examples.app"
+        applicationId = "dev.gobley.uniffi.examples.app"
         minSdk = 24
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

@@ -1,4 +1,4 @@
-import io.gitlab.trixnity.gradle.cargo.rust.profiles.CargoProfile
+import dev.gobley.gradle.cargo.rust.profiles.CargoProfile
 
 plugins {
     id("cargo-tests")

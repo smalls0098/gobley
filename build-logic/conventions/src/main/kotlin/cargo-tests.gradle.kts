@@ -1,12 +1,12 @@
-import io.gitlab.trixnity.gradle.RustHost
-import io.gitlab.trixnity.gradle.cargo.dsl.jvm
-import io.gitlab.trixnity.gradle.cargo.dsl.native
+import dev.gobley.gradle.RustHost
+import dev.gobley.gradle.cargo.dsl.jvm
+import dev.gobley.gradle.cargo.dsl.native
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
     id("host-jvm-native-tests")
-    id("io.gitlab.trixnity.cargo.kotlin.multiplatform")
+    id("dev.gobley.cargo")
 }
 
 cargo {

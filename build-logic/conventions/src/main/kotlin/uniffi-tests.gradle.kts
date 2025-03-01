@@ -1,11 +1,11 @@
-import io.gitlab.trixnity.gradle.RustHost
-import io.gitlab.trixnity.gradle.cargo.dsl.jvm
-import io.gitlab.trixnity.gradle.uniffi.tasks.InstallBindgenTask
+import dev.gobley.gradle.RustHost
+import dev.gobley.gradle.cargo.dsl.jvm
+import dev.gobley.gradle.uniffi.tasks.InstallBindgenTask
 
 plugins {
     id("host-jvm-native-tests")
-    id("io.gitlab.trixnity.cargo.kotlin.multiplatform")
-    id("io.gitlab.trixnity.uniffi.kotlin.multiplatform")
+    id("dev.gobley.cargo")
+    id("dev.gobley.uniffi")
 }
 
 cargo {

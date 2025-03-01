@@ -21,6 +21,6 @@ dictionary CustomTypesDemo {
     TimeIntervalSecFlt time_interval_sec_flt;
 };
 
-namespace uniffi_kmm_example_custom_types {
+namespace gobley_example_custom_types {
     CustomTypesDemo get_custom_types_demo(CustomTypesDemo? demo);
 };

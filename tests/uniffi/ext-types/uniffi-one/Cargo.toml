@@ -1,5 +1,5 @@
 [package]
-name = "uniffi-kmm-fixture-ext-types-uniffi-one"
+name = "gobley-fixture-ext-types-uniffi-one"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -16,4 +16,4 @@ path = "src/commonMain/rust/lib.rs"
 uniffi = { workspace = true }
 
 [build-dependencies]
-uniffi-kmm-fixture-build-common = { path = "../../../build-common" }
+gobley-fixture-build-common = { path = "../../../build-common" }

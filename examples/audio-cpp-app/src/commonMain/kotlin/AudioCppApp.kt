@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.examples.audiocppapp
+package dev.gobley.uniffi.examples.audiocppapp
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions

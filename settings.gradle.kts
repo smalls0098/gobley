@@ -22,7 +22,7 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
 }
 
-rootProject.name = "uniffi-kotlin-multiplatform-bindings"
+rootProject.name = "gobley"
 
 fun ExtraPropertiesExtension.propertyIsTrue(propertyName: String, default: Boolean = true): Boolean {
     if (!has(propertyName)) return default
@@ -30,13 +30,13 @@ fun ExtraPropertiesExtension.propertyIsTrue(propertyName: String, default: Boole
     return propertyValue == "true" || propertyValue == "1"
 }
 
-if (ext.propertyIsTrue("uniffi-kmm.projects.gradleTests")) {
+if (ext.propertyIsTrue("gobley.projects.gradleTests")) {
     include(":tests:gradle:android-linking")
     include(":tests:gradle:cargo-only")
     include(":tests:gradle:no-uniffi-block")
 }
 
-if (ext.propertyIsTrue("uniffi-kmm.projects.uniffiTests")) {
+if (ext.propertyIsTrue("gobley.projects.uniffiTests")) {
     include(":tests:uniffi:callbacks")
     include(":tests:uniffi:chronological")
     include(":tests:uniffi:coverall")
@@ -62,7 +62,7 @@ if (ext.propertyIsTrue("uniffi-kmm.projects.uniffiTests")) {
     include(":tests:uniffi:type-limits")
 }
 
-if (ext.propertyIsTrue("uniffi-kmm.projects.examples")) {
+if (ext.propertyIsTrue("gobley.projects.examples")) {
     include(":examples:app")
     include(":examples:arithmetic-procmacro")
     include(":examples:audio-cpp-app")

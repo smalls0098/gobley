@@ -1,2 +1,2 @@
-package_name = "io.gitlab.trixnity.uniffi.examples.todolist"
-cdylib_name = "uniffi_kmm_example_todolist"
+package_name = "dev.gobley.uniffi.examples.todolist"
+cdylib_name = "gobley_example_todolist"

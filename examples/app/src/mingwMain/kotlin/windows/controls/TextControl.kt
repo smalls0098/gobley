@@ -4,9 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.examples.app.windows.controls
+package dev.gobley.uniffi.examples.app.windows.controls
 
-import io.gitlab.trixnity.uniffi.examples.app.windows.Window
+import dev.gobley.uniffi.examples.app.windows.Window
 import platform.windows.*
 
 class TextControl(

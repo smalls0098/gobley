@@ -1,12 +1,12 @@
-import io.gitlab.trixnity.gradle.RustHost
-import io.gitlab.trixnity.gradle.cargo.dsl.android
+import dev.gobley.gradle.RustHost
+import dev.gobley.gradle.cargo.dsl.android
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
-    id("io.gitlab.trixnity.rust.kotlin.multiplatform")
-    id("io.gitlab.trixnity.cargo.kotlin.multiplatform")
-    id("io.gitlab.trixnity.uniffi.kotlin.multiplatform")
+    id("dev.gobley.rust")
+    id("dev.gobley.cargo")
+    id("dev.gobley.uniffi")
     alias(libs.plugins.kotlin.atomicfu)
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
@@ -39,7 +39,7 @@ kotlin {
             it.binaries.framework {
                 baseName = "AudioCppAppKotlin"
                 isStatic = true
-                binaryOption("bundleId", "io.gitlab.trixnity.uniffi.examples.audiocppapp.kotlin")
+                binaryOption("bundleId", "dev.gobley.uniffi.examples.audiocppapp.kotlin")
                 binaryOption("bundleVersion", "0")
             }
         }
@@ -59,11 +59,11 @@ kotlin {
 }
 
 android {
-    namespace = "io.gitlab.trixnity.uniffi.examples.audiocppapp"
+    namespace = "dev.gobley.uniffi.examples.audiocppapp"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "io.gitlab.trixnity.uniffi.examples.audiocppapp"
+        applicationId = "dev.gobley.uniffi.examples.audiocppapp"
         minSdk = 26
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

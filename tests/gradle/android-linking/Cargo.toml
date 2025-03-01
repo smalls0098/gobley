@@ -1,11 +1,11 @@
 [package]
-name = "uniffi-kmm-fixture-gradle-android-linking"
+name = "gobley-fixture-gradle-android-linking"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [lib]
-name = "uniffi_kmm_fixture_gradle_android_linking"
+name = "gobley_fixture_gradle_android_linking"
 crate-type = ["cdylib"]
 path = "src/androidMain/rust/lib.rs"
 

@@ -1,11 +1,11 @@
 [package]
-name = "uniffi-kmm-example-tokio-blake3-app"
+name = "gobley-example-tokio-blake3-app"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [lib]
-name = "uniffi_kmm_example_tokio_blake3_app"
+name = "gobley_example_tokio_blake3_app"
 crate-type = ["cdylib", "staticlib"]
 path = "src/commonMain/rust/lib.rs"
 

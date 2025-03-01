@@ -1,11 +1,11 @@
 [package]
-name = "uniffi-kmm-example-todolist"
+name = "gobley-example-todolist"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [lib]
-name = "uniffi_kmm_example_todolist"
+name = "gobley_example_todolist"
 crate-type = ["cdylib", "staticlib"]
 path = "src/commonMain/rust/lib.rs"
 

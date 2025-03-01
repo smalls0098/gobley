@@ -1,10 +1,10 @@
-import io.gitlab.trixnity.gradle.RustHost
+import dev.gobley.gradle.RustHost
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
-    id("io.gitlab.trixnity.cargo.kotlin.multiplatform")
-    id("io.gitlab.trixnity.uniffi.kotlin.multiplatform")
+    id("dev.gobley.cargo")
+    id("dev.gobley.uniffi")
     alias(libs.plugins.kotlin.atomicfu)
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
@@ -33,7 +33,7 @@ kotlin {
             it.binaries.framework {
                 baseName = "TokioBlake3AppKotlin"
                 isStatic = true
-                binaryOption("bundleId", "io.gitlab.trixnity.uniffi.examples.tokioblake3app.kotlin")
+                binaryOption("bundleId", "dev.gobley.uniffi.examples.tokioblake3app.kotlin")
                 binaryOption("bundleVersion", "0")
             }
         }
@@ -54,11 +54,11 @@ kotlin {
 }
 
 android {
-    namespace = "io.gitlab.trixnity.uniffi.examples.tokioblake3app"
+    namespace = "dev.gobley.uniffi.examples.tokioblake3app"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "io.gitlab.trixnity.uniffi.examples.tokioblake3app"
+        applicationId = "dev.gobley.uniffi.examples.tokioblake3app"
         minSdk = 24
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

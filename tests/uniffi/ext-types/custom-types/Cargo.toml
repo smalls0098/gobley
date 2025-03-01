@@ -1,5 +1,5 @@
 [package]
-name = "uniffi-kmm-fixture-ext-types-custom-types"
+name = "gobley-fixture-ext-types-custom-types"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -17,4 +17,4 @@ uniffi = { workspace = true }
 thiserror = { workspace = true }
 
 [build-dependencies]
-uniffi-kmm-fixture-build-common = { path = "../../../build-common" }
+gobley-fixture-build-common = { path = "../../../build-common" }

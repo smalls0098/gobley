@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.examples.app.event
+package dev.gobley.uniffi.examples.app.event
 
 import kotlinx.cinterop.*
 import org.gnome.gitlab.gtk.*

@@ -4,9 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.examples.app
+package dev.gobley.uniffi.examples.app
 
-import io.gitlab.trixnity.uniffi.examples.todolist.TodoList
+import dev.gobley.uniffi.examples.todolist.TodoList
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.zeroValue
 import platform.AppKit.*

@@ -1,11 +1,11 @@
 [package]
-name = "uniffi-kmm-example-audio-cpp-app"
+name = "gobley-example-audio-cpp-app"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [lib]
-name = "uniffi_kmm_example_audio_cpp_app"
+name = "gobley_example_audio_cpp_app"
 crate-type = ["cdylib", "staticlib"]
 path = "src/commonMain/rust/lib.rs"
 

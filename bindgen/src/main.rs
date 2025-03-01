@@ -12,7 +12,7 @@ use anyhow::Context as _;
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use uniffi_bindgen::BindgenCrateConfigSupplier;
-use uniffi_bindgen_kotlin_multiplatform::KotlinBindingGenerator;
+use gobley_uniffi_bindgen::KotlinBindingGenerator;
 
 #[derive(Parser)]
 #[clap(name = "uniffi-bindgen")]

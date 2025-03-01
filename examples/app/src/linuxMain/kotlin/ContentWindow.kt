@@ -4,14 +4,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.examples.app
+package dev.gobley.uniffi.examples.app
 
-import io.gitlab.trixnity.uniffi.examples.app.event.EventControllerKey
-import io.gitlab.trixnity.uniffi.examples.app.widgets.*
-import io.gitlab.trixnity.uniffi.examples.arithmeticpm.add
-import io.gitlab.trixnity.uniffi.examples.arithmeticpm.sub
-import io.gitlab.trixnity.uniffi.examples.todolist.TodoEntry
-import io.gitlab.trixnity.uniffi.examples.todolist.TodoList
+import dev.gobley.uniffi.examples.app.event.EventControllerKey
+import dev.gobley.uniffi.examples.app.widgets.*
+import dev.gobley.uniffi.examples.arithmeticpm.add
+import dev.gobley.uniffi.examples.arithmeticpm.sub
+import dev.gobley.uniffi.examples.todolist.TodoEntry
+import dev.gobley.uniffi.examples.todolist.TodoList
 import org.gnome.gitlab.gtk.*
 import kotlinx.cinterop.*
 

@@ -1,12 +1,12 @@
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import io.gitlab.trixnity.gradle.RustHost
-import io.gitlab.trixnity.gradle.cargo.dsl.android
-import io.gitlab.trixnity.gradle.cargo.rust.targets.RustAndroidTarget
+import dev.gobley.gradle.RustHost
+import dev.gobley.gradle.cargo.dsl.android
+import dev.gobley.gradle.cargo.rust.targets.RustAndroidTarget
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
-    id("io.gitlab.trixnity.cargo.kotlin.multiplatform")
+    id("dev.gobley.cargo")
     alias(libs.plugins.android.library)
 }
 
@@ -92,7 +92,7 @@ kotlin {
 }
 
 android {
-    namespace = "io.gitlab.trixnity.uniffi.tests.gradle.androidlinking"
+    namespace = "dev.gobley.uniffi.tests.gradle.androidlinking"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {

@@ -4,9 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.examples.app.windows
+package dev.gobley.uniffi.examples.app.windows
 
-import io.gitlab.trixnity.uniffi.examples.app.Win32Exception
+import dev.gobley.uniffi.examples.app.Win32Exception
 import kotlinx.cinterop.*
 import platform.windows.*
 

@@ -1,11 +1,11 @@
 [package]
-name = "uniffi-kmm-fixture-gradle-cargo-only"
+name = "gobley-fixture-gradle-cargo-only"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [lib]
-name = "uniffi_kmm_fixture_gradle_cargo_only"
+name = "gobley_fixture_gradle_cargo_only"
 crate-type = ["cdylib", "staticlib"]
 path = "src/commonMain/rust/lib.rs"
 

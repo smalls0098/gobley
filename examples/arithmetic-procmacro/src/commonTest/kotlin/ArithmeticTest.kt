@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import io.gitlab.trixnity.uniffi.examples.arithmeticpm.*
+import dev.gobley.uniffi.examples.arithmeticpm.*
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test

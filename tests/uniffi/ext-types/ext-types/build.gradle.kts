@@ -24,12 +24,12 @@ kotlin {
 
 tasks.withType<Test> {
     val dependencyNamespaceNames = arrayOf(
-        "uniffi_kmm_example_custom_types",
+        "gobley_example_custom_types",
         "kmm_ext_types_custom",
         "kmm_uniffi_one",
         "sub_lib",
     )
     for (dependencyNamespace in dependencyNamespaceNames) {
-        systemProperties["uniffi.component.$dependencyNamespace.libraryOverride"] = "uniffi_kmm_fixture_ext_types"
+        systemProperties["uniffi.component.$dependencyNamespace.libraryOverride"] = "gobley_fixture_ext_types"
     }
 }

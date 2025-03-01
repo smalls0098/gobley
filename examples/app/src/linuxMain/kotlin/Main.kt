@@ -4,14 +4,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.gitlab.trixnity.uniffi.examples.app
+package dev.gobley.uniffi.examples.app
 
-import io.gitlab.trixnity.uniffi.examples.todolist.TodoList
+import dev.gobley.uniffi.examples.todolist.TodoList
 import kotlin.system.exitProcess
 
 @OptIn(ExperimentalStdlibApi::class)
 fun main(args: Array<String>) {
-    val application = object : Application("io.gitlab.trixnity.uniffi.examples.app", args) {
+    val application = object : Application("dev.gobley.uniffi.examples.app", args) {
         override fun activate() {
             ContentWindow(this, TodoList()).run {
                 title = "TodoList App"
