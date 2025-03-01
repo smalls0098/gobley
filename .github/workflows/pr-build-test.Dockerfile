@@ -1,5 +1,9 @@
 FROM rust:1.74-slim
 
+# Use Clippy to detect more warnings
+RUN rustup component add clippy
+
+# Install various dependencies
 RUN apt update && \
     apt install -y \
       openjdk-17-jdk-headless \
@@ -12,11 +16,19 @@ RUN apt update && \
       mingw-w64-x86-64-dev \
       # For Linux example apps
       libgtk-4-dev \
-      # For Zig \
+      # For Zig and PowerShell
       wget \
       # For packages that builds OpenSSL from the source like blake3 used in examples
-      perl \
-    && rm -rf /var/lib/apt/lists/*
+      perl && \
+    # Use PowerShell for complex scripting
+    . /etc/os-release && \
+      wget -q https://packages.microsoft.com/config/debian/$VERSION_ID/packages-microsoft-prod.deb && \
+      dpkg -i packages-microsoft-prod.deb && \
+      rm packages-microsoft-prod.deb && \
+    apt update && \
+    apt install -y powershell && \
+    # Delete package resource info as not needed
+    rm -rf /var/lib/apt/lists/*
 
 # Use Zig as cross-compilation linker for Arm64 Linux
 ENV ZIG_VERSION=0.13.0
@@ -27,26 +39,27 @@ RUN wget -c https://ziglang.org/download/$ZIG_VERSION/$ZIG_BUILD.tar.xz && \
     tar -xf $ZIG_BUILD.tar.xz && \
     rm $ZIG_BUILD.tar.xz && \
     printf "#! /bin/sh\n/zig/$ZIG_BUILD/zig cc -target aarch64-linux-gnu \"\$@\"" > aarch64-unknown-linux-gnu-cc.sh && \
-    chmod 777 aarch64-unknown-linux-gnu-cc.sh && \
+    chmod 555 aarch64-unknown-linux-gnu-cc.sh && \
     mkdir -p /.cargo && \
     printf "[target.aarch64-unknown-linux-gnu]\nlinker = \"/zig/aarch64-unknown-linux-gnu-cc.sh\"" > /.cargo/config.toml
 
-RUN useradd -m uniffi-builder
-USER uniffi-builder
-
-ENV ANDROID_HOME=/home/uniffi-builder/android-sdk
+# Configure the Android SDK
+ENV ANDROID_HOME=/android-sdk
 RUN mkdir -p $ANDROID_HOME
 RUN sdkmanager --install \
     "cmake;3.22.1" \
     "build-tools;34.0.0" \
-    "platforms;android-34" \
-    "ndk;26.1.10909125"
+    "build-tools;35.0.1" \
+    "platform-tools;35.0.2" \
+    "platforms;android-35" \
+    "ndk;27.0.12077973"
 RUN yes | sdkmanager --licenses
 
-COPY --chown=uniffi-builder:uniffi-builder . /home/uniffi-builder/uniffi-kotlin-multiplatform-bindings
-
-WORKDIR /home/uniffi-builder/uniffi-kotlin-multiplatform-bindings
 # Download dependencies to warm the cache
+COPY . /dependency-hot-plate
+WORKDIR /dependency-hot-plate
 RUN ./gradlew dependencies
+
 # Delete the project files so they don't mess with future builds
-RUN rm -rf [!.]* *
+WORKDIR /
+RUN rm -rf /dependency-hot-plate

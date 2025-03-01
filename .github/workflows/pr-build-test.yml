@@ -1,0 +1,60 @@
+name: Build and run tests
+
+on:
+  push:
+    branches: [ "main*" ]
+  pull_request:
+    branches: [ "main*" ]
+
+jobs:
+  build-image:
+    timeout-minutes: 120
+    runs-on: ubuntu-latest
+    outputs:
+      build-image: ${{ steps.build-image.outputs.build-image }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Docker CLI experimental features
+        run: echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $GITHUB_ENV
+      - name: Docker login to GitHub Container Registry
+        run: docker login ghcr.io -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}"
+      - name: Build and push image if not present
+        id: build-image
+        run: |
+          BUILD_IMAGE_HASH=$(echo -n "$(cat Cargo.lock .github/workflows/pr-build-test.Dockerfile gradle/libs.versions.toml)" | md5sum | cut -c1-8)
+          BUILD_IMAGE="ghcr.io/${{ github.repository }}/pr-build-test:$BUILD_IMAGE_HASH"
+          echo "build-image=$BUILD_IMAGE" >> $GITHUB_OUTPUT
+          if ! docker manifest inspect $BUILD_IMAGE; then
+            docker build -t $BUILD_IMAGE -f ./.github/workflows/pr-build-test.Dockerfile .
+            docker push $BUILD_IMAGE
+          fi
+  build-and-test:
+    timeout-minutes: 120
+    runs-on: ubuntu-latest
+    needs: build-image
+    strategy:
+      matrix:
+        test-name:
+          - cargo-tests
+          - examples
+          - gradle-plugin-tests
+          - gradle-tests
+          - uniffi-tests
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Docker CLI experimental features
+        run: echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $GITHUB_ENV
+      - name: Docker login to GitHub Container Registry
+        run: docker login ghcr.io -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}"
+      - name: Run tests in container
+        run: |
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}":/home/pr-build-test/workspace \
+            -w /home/pr-build-test/workspace \
+            ${{ needs.build-image.outputs.build-image }} \
+            /usr/bin/pwsh -c ./.github/workflows/pr-build-test-${{ matrix.test-name }}.ps1
+      - name: Report test results
+        uses: mikepenz/action-junit-report@v5
+        if: ${{ matrix.test-name != 'cargo-tests' && (success() || failure()) }}
+        with:
+          report_paths: './.github/workflows/pr-build-test/**/test-results/*Test/*.xml'
