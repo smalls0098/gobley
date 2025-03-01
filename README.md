@@ -1038,11 +1038,11 @@ configuration in order to use these local versions in your projects. Since this 
 unit tests and examples, you may want to opt out of building them. Use the following Gradle properties to
 choose tests and examples to turn on and off.
 
-| Gradle property name              | Projects                                |
-|-----------------------------------|-----------------------------------------|
-| `uniffi-kmm.projects.gradleTests` | `:tests:gradle`                         |
-| `uniffi-kmm.projects.uniffiTests` | `:tests:uniffi`                         |
-| `uniffi-kmm.projects.examples`    | `:examples` & `:tests:uniffi:ext-types` |
+| Gradle property name              | Projects                                   |
+|-----------------------------------|--------------------------------------------|
+| `uniffi-kmm.projects.gradleTests` | `:tests:gradle`                            |
+| `uniffi-kmm.projects.uniffiTests` | `:tests:uniffi` & `:examples:custom-types` |
+| `uniffi-kmm.projects.examples`    | `:examples`                                |
 
 These following properties are already in `gradle.properties`. Simply replace `=true` to `=false` to turn
 them off.

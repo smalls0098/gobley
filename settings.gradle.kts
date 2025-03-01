@@ -44,14 +44,14 @@ if (ext.propertyIsTrue("uniffi-kmm.projects.uniffiTests")) {
     include(":tests:uniffi:docstring-proc-macro")
     include(":tests:uniffi:enum-types")
     include(":tests:uniffi:error-types")
-    if (ext.propertyIsTrue("uniffi-kmm.projects.examples")) {
-        include(":tests:uniffi:ext-types:custom-types")
-        include(":tests:uniffi:ext-types:ext-types")
-        include(":tests:uniffi:ext-types:ext-types-proc-macro")
-        include(":tests:uniffi:ext-types:http-headermap")
-        include(":tests:uniffi:ext-types:sub-lib")
-        include(":tests:uniffi:ext-types:uniffi-one")
-    }
+    // Required by ext-types and ext-types-proc-macro
+    include(":examples:custom-types")
+    include(":tests:uniffi:ext-types:custom-types")
+    include(":tests:uniffi:ext-types:ext-types")
+    include(":tests:uniffi:ext-types:ext-types-proc-macro")
+    include(":tests:uniffi:ext-types:http-headermap")
+    include(":tests:uniffi:ext-types:sub-lib")
+    include(":tests:uniffi:ext-types:uniffi-one")
     include(":tests:uniffi:futures")
     include(":tests:uniffi:keywords")
     include(":tests:uniffi:proc-macro")
