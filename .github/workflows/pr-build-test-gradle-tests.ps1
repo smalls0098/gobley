@@ -1,6 +1,3 @@
-$ErrorActionPreference = "Stop";
-$PSNativeCommandUseErrorActionPreference = $true;
-
 ./gradlew allTests `
     "-Pgobley.projects.uniffiTests=false" `
     "-Pgobley.projects.examples=false";

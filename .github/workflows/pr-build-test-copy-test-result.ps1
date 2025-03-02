@@ -1,3 +1,6 @@
+$ErrorActionPreference = "Stop";
+$PSNativeCommandUseErrorActionPreference = $true;
+
 # Copy build results
 if (-not (Test-Path "./.github/workflows/pr-build-test")) {
     New-Item -Type Directory "./.github/workflows/pr-build-test";
