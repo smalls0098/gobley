@@ -4,4 +4,4 @@
 
 ### Added
 
-- Support for `uniffi-rs@0.25.2`
+- Support for `uniffi@0.25.2`

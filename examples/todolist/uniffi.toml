@@ -1,2 +1,2 @@
-package_name = "dev.gobley.uniffi.examples.todolist"
+package_name = "gobley.uniffi.examples.todolist"
 cdylib_name = "gobley_example_todolist"

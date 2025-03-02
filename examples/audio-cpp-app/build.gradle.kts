@@ -1,5 +1,5 @@
-import dev.gobley.gradle.RustHost
-import dev.gobley.gradle.cargo.dsl.android
+import gobley.gradle.RustHost
+import gobley.gradle.cargo.dsl.android
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {

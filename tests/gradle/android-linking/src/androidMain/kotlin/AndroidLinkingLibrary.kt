@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package dev.gobley.uniffi.tests.gradle.androidlinking
+package gobley.uniffi.tests.gradle.androidlinking
 
 object AndroidLinkingLibrary {
     init {

@@ -1,6 +1,6 @@
-import dev.gobley.gradle.RustHost
-import dev.gobley.gradle.cargo.dsl.jvm
-import dev.gobley.gradle.uniffi.tasks.InstallBindgenTask
+import gobley.gradle.RustHost
+import gobley.gradle.cargo.dsl.jvm
+import gobley.gradle.uniffi.tasks.InstallBindgenTask
 
 plugins {
     id("host-jvm-native-tests")

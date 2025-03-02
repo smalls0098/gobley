@@ -39,7 +39,7 @@ tasks.withType<Test> {
 }
 
 buildConfig {
-    packageName = "dev.gobley.uniffi.gradle"
+    packageName = "gobley.gradle"
 
     buildConfigField("String", "BINDGEN_VERSION", "\"${bindgenInfo.version}\"")
     buildConfigField("String", "BINDGEN_CRATE", "\"${bindgenInfo.name}\"")
@@ -60,9 +60,9 @@ buildConfig {
         buildConfigField("String", "KOTLIN_SERIALIZATION", "\"${libs.plugins.kotlin.serialization.get().pluginId}\"")
         buildConfigField("String", "ANDROID_APPLICATION", "\"${libs.plugins.android.application.get().pluginId}\"")
         buildConfigField("String", "ANDROID_LIBRARY", "\"${libs.plugins.android.library.get().pluginId}\"")
-        buildConfigField("String", "RUST_KOTLIN_MULTIPLATFORM", "\"dev.gobley.rust\"")
-        buildConfigField("String", "CARGO_KOTLIN_MULTIPLATFORM", "\"dev.gobley.cargo\"")
-        buildConfigField("String", "UNIFFI_KOTLIN_MULTIPLATFORM", "\"dev.gobley.uniffi\"")
+        buildConfigField("String", "GOBLEY_RUST", "\"dev.gobley.rust\"")
+        buildConfigField("String", "GOBLEY_CARGO", "\"dev.gobley.cargo\"")
+        buildConfigField("String", "GOBLEY_UNIFFI", "\"dev.gobley.uniffi\"")
     }
 }
 
@@ -75,21 +75,21 @@ gradlePlugin {
         create("gobley-gradle-cargo") {
             id = "dev.gobley.cargo"
             displayName = name
-            implementationClass = "dev.gobley.gradle.cargo.CargoPlugin"
+            implementationClass = "gobley.gradle.cargo.CargoPlugin"
             description = "A plugin for building Rust libraries and link them to Kotlin projects."
             tags.addAll("rust", "kotlin", "kotlin-multiplatform")
         }
         create("gobley-gradle-uniffi") {
             id = "dev.gobley.uniffi"
             displayName = name
-            implementationClass = "dev.gobley.gradle.uniffi.UniFfiPlugin"
+            implementationClass = "gobley.gradle.uniffi.UniFfiPlugin"
             description = "A plugin for generating UniFFI Kotlin Multiplatform bindings for Rust libraries."
             tags.addAll("uniffi", "rust", "kotlin", "kotlin-multiplatform")
         }
         create("gobley-gradle-rust") {
             id = "dev.gobley.rust"
             displayName = name
-            implementationClass = "dev.gobley.gradle.rust.RustPlugin"
+            implementationClass = "gobley.gradle.rust.RustPlugin"
             description = "A plugin for configuring Rust toolchain and linking Rust libraries to Kotlin projects."
             tags.addAll("rust", "kotlin", "kotlin-multiplatform")
         }

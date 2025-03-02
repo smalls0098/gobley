@@ -4,9 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package dev.gobley.uniffi.examples.app.windows
+package gobley.uniffi.examples.app.windows
 
-import dev.gobley.uniffi.examples.app.Win32Exception
+import gobley.uniffi.examples.app.Win32Exception
 import kotlinx.cinterop.*
 import platform.windows.*
 

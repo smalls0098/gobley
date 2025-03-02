@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package dev.gobley.uniffi.examples.audiocppapp
+package gobley.uniffi.examples.audiocppapp
 
 import androidx.compose.ui.window.ComposeUIViewController
 

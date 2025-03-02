@@ -1,7 +1,7 @@
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import dev.gobley.gradle.RustHost
-import dev.gobley.gradle.cargo.dsl.android
-import dev.gobley.gradle.cargo.rust.targets.RustAndroidTarget
+import gobley.gradle.RustHost
+import gobley.gradle.cargo.dsl.android
+import gobley.gradle.cargo.rust.targets.RustAndroidTarget
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {

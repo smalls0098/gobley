@@ -1,4 +1,4 @@
-import dev.gobley.gradle.RustHost
+import gobley.gradle.RustHost
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {

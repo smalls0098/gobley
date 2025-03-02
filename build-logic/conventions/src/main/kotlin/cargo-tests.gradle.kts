@@ -1,6 +1,6 @@
-import dev.gobley.gradle.RustHost
-import dev.gobley.gradle.cargo.dsl.jvm
-import dev.gobley.gradle.cargo.dsl.native
+import gobley.gradle.RustHost
+import gobley.gradle.cargo.dsl.jvm
+import gobley.gradle.cargo.dsl.native
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 

@@ -4,9 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package dev.gobley.uniffi.examples.app.windows.controls
+package gobley.uniffi.examples.app.windows.controls
 
-import dev.gobley.uniffi.examples.app.windows.Window
+import gobley.uniffi.examples.app.windows.Window
 import platform.windows.*
 
 class ButtonControl(

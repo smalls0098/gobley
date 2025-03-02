@@ -4,9 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package dev.gobley.uniffi.examples.app.event
+package gobley.uniffi.examples.app.event
 
-import dev.gobley.uniffi.examples.app.signalConnect
+import gobley.uniffi.examples.app.signalConnect
 import kotlinx.cinterop.*
 import org.gnome.gitlab.gtk.*
 

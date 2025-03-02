@@ -1,6 +1,6 @@
-import dev.gobley.gradle.RustHost
-import dev.gobley.gradle.rust.dsl.hostNativeTarget
-import dev.gobley.gradle.rust.dsl.useRustUpLinker
+import gobley.gradle.RustHost
+import gobley.gradle.rust.dsl.hostNativeTarget
+import gobley.gradle.rust.dsl.useRustUpLinker
 import org.gradle.accessors.dm.*
 
 plugins {

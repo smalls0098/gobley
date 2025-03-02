@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package dev.gobley.uniffi.examples.tokioblake3app
+package gobley.uniffi.examples.tokioblake3app
 
 import androidx.compose.ui.window.ComposeUIViewController
 

@@ -1,4 +1,4 @@
-package_name = "dev.gobley.uniffi.examples.customtypes"
+package_name = "gobley.uniffi.examples.customtypes"
 
 [custom_types.Url]
 # Name of the type in the Kotlin code

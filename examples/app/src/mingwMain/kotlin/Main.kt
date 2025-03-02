@@ -4,10 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package dev.gobley.uniffi.examples.app
+package gobley.uniffi.examples.app
 
-import dev.gobley.uniffi.examples.app.windows.Window
-import dev.gobley.uniffi.examples.todolist.TodoList
+import gobley.uniffi.examples.app.windows.Window
+import gobley.uniffi.examples.todolist.TodoList
 
 @OptIn(ExperimentalStdlibApi::class)
 fun main() = ContentWindow(TodoList()).use { window ->

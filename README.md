@@ -115,7 +115,7 @@ customized [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.h
 you can configure them in the `cargo {}` block as well.
 
 ```kotlin
-import dev.gobley.gradle.cargo.rust.profiles.CargoProfile
+import gobley.gradle.cargo.rust.profiles.CargoProfile
 
 cargo {
     features.addAll("foo", "bar")
@@ -173,7 +173,7 @@ targets, you can configure it with the `jvmVariant` or `nativeVariant` propertie
 default to `Variant.Debug`.
 
 ```kotlin
-import dev.gobley.gradle.Variant
+import gobley.gradle.Variant
 
 cargo {
     jvmVariant = Variant.Release
@@ -228,7 +228,7 @@ need finer control, you can directly configure the properties of the build task.
 `builds {}` block.
 
 ```kotlin
-import dev.gobley.gradle.cargo.dsl.*
+import gobley.gradle.cargo.dsl.*
 
 cargo {
     builds {
@@ -270,8 +270,8 @@ build a shared library for the current build host only, set this property to
 `rustTarget == RustHost.current.rustTarget`.
 
 ```kotlin
-import dev.gobley.gradle.RustHost
-import dev.gobley.gradle.cargo.dsl.*
+import gobley.gradle.RustHost
+import gobley.gradle.cargo.dsl.*
 
 cargo {
     builds.jvm {
@@ -285,9 +285,9 @@ for JVM when Visual C++ is available. To override this behavior, use the `embedR
 following. Note that Windows on ARM is not available with MinGW.
 
 ```kotlin
-import dev.gobley.gradle.RustHost
-import dev.gobley.gradle.cargo.rust.targets.RustWindowsTarget
-import dev.gobley.gradle.cargo.dsl.*
+import gobley.gradle.RustHost
+import gobley.gradle.cargo.rust.targets.RustWindowsTarget
+import gobley.gradle.cargo.dsl.*
 
 cargo {
     builds.jvm {
@@ -338,8 +338,8 @@ directly or indirectly use the Cargo project. If you want to include shared libr
 can control that using the `androidUnitTest` property.
 
 ```kotlin
-import dev.gobley.gradle.cargo.dsl.*
-import dev.gobley.gradle.cargo.rust.targets.RustWindowsTarget
+import gobley.gradle.cargo.dsl.*
+import gobley.gradle.cargo.rust.targets.RustWindowsTarget
 
 cargo {
     builds.jvm {
@@ -453,8 +453,8 @@ The UniFFI plugin is responsible for generating Kotlin bindings from your Rust p
 UniFFI plugin to build bindings from the resulting library binary.
 
 ```kotlin
-import dev.gobley.gradle.Variant
-import dev.gobley.gradle.cargo.rust.targets.RustAndroidTarget
+import gobley.gradle.Variant
+import gobley.gradle.cargo.rust.targets.RustAndroidTarget
 
 plugins {
     kotlin("multiplatform")
@@ -527,7 +527,7 @@ and `KotlinNativeCompilation.useRustUpLinker`.
 build host is not supported yet.
 
 ```kotlin
-import dev.gobley.gradle.cargo.dsl.*
+import gobley.gradle.cargo.dsl.*
 
 kotlin {
     hostNativeTarget()
@@ -541,7 +541,7 @@ with `rustup`, so you can use this when your Rust project emits a linker flag th
 LLVM linker.
 
 ```kotlin
-import dev.gobley.gradle.cargo.dsl.*
+import gobley.gradle.cargo.dsl.*
 
 kotlin {
     iosArm64().compilations.getByName("main") {
@@ -557,7 +557,7 @@ to your Rust code. In most cases, [the UniFFI Gradle plugin](#the-uniffi-plugin)
 don't have to know all the details of the bindgen. Still, you can directly use this bindgen if you have more
 complicated build system.
 
-The minimum Rust version required to install `uniffi_bindgen_kotlin_multiplatform` is `1.72`. Newer Rust versions should
+The minimum Rust version required to install `gobley-uniffi-bindgen` is `1.72`. Newer Rust versions should
 also work fine. The source code of the bindgen for Kotlin Multiplatform is in [`bindgen`](./bindgen). See comments in
 [`bindgen/src/main.rs`](./bindgen/src/main.rs) or
 [`BuildBindingsTask.kt`](./build-logic/gradle-plugin/src/main/kotlin/io/gitlab/trixnity/gradle/uniffi/tasks/BuildBindingsTask.kt)
@@ -566,13 +566,13 @@ to see how to use the bindgen from the command line.
 To install the bindgen, run:
 
 ```shell
-cargo install --bin uniffi-bindgen-kotlin-multiplatform uniffi_bindgen_kotlin_multiplatform@0.1.0
+cargo install --bin gobley-uniffi-bindgen gobley-uniffi-bindgen@0.1.0
 ```
 
 to invoke the bindgen, run:
 
 ```shell
-uniffi-bindgen-kotlin-multiplatform --lib-file <path-to-library-file> --out-dir <output-directory> --crate <crate-name> <path-to-udl-file>
+gobley-uniffi-bindgen --lib-file <path-to-library-file> --out-dir <output-directory> --crate <crate-name> <path-to-udl-file>
 ```
 
 If you want to use the bindgen in your own Crago build script, please read the
@@ -989,7 +989,7 @@ cargo {
 
 ## Building for Windows on ARM
 
-By default on a x64 machine, Visual Studio installs MSVC for x64/x86 only. If you try to link a
+By default on an x64 machine, Visual Studio installs MSVC for x64/x86 only. If you try to link a
 program for ARM64 without the MSVC ARM64 toolchain, you may see an error that Cargo couldn't find
 `link.exe`.
 
@@ -1013,27 +1013,27 @@ This project does not support building for 32-bit ARM Windows.
 
 # Versioning
 
-`uniffi_bindgen_kotlin_multiplatform` is versioned separately from `uniffi-rs`. UniFFI follows the
+`gobley-uniffi-bindgen` is versioned separately from `uniffi-rs`. UniFFI follows the
 [SemVer rules from the Cargo Book](https://doc.rust-lang.org/cargo/reference/resolver.html#semver-compatibility)
 which states "Versions are considered compatible if their left-most non-zero major/minor/patch
 component is the same". A breaking change is any modification to the Kotlin Multiplatform bindings
 that demands the consumer of the bindings to make corresponding changes to their code to ensure that
-the bindings continue to function properly. `uniffi_bindgen_kotlin_multiplatform` is young, and it's
+the bindings continue to function properly. `gobley-uniffi-bindgen` is young, and it's
 unclear how stable the generated bindings are going to be between versions. For this reason, major
 version is currently 0, and most changes are probably going to bump minor version.
 
-To ensure consistent feature set across external binding generators, `uniffi_bindgen_kotlin_multiplatform`
+To ensure consistent feature set across external binding generators, `gobley-uniffi-bindgen`
 targets a specific `uniffi-rs` version. A consumer using these bindings or any other external
 bindings (for example, [Go bindings](https://github.com/NordSecurity/uniffi-bindgen-go/) or
 [C# bindings](https://github.com/NordSecurity/uniffi-bindgen-cs)) expects the same features to be
 available across multiple bindings generators. This means that the consumer should choose external
 binding generator versions such that each generator targets the same `uniffi-rs` version.
 
-Here is how `uniffi_bindgen_kotlin_multiplatform` versions are tied to `uniffi-rs` are tied:
+Here is how `gobley-uniffi-bindgen` versions are tied to `uniffi-rs` are tied:
 
-| uniffi_bindgen_kotlin_multiplatform version | uniffi-rs version |
-|---------------------------------------------|-------------------|
-| v0.1.0                                      | v0.25.2           |
+| gobley-uniffi-bindgen version | uniffi-rs version |
+|-------------------------------|-------------------|
+| v0.1.0                        | v0.25.2           |
 
 # Build and use locally
 
