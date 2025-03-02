@@ -1,4 +1,4 @@
-import gobley.gradle.RustHost
+import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.jvm
 import gobley.gradle.uniffi.tasks.InstallBindgenTask
 
@@ -10,7 +10,7 @@ plugins {
 
 cargo {
     builds.jvm {
-        embedRustLibrary.set(rustTarget == RustHost.current.rustTarget)
+        embedRustLibrary.set(rustTarget == GobleyHost.current.rustTarget)
     }
 }
 

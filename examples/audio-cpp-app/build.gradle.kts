@@ -1,4 +1,4 @@
-import gobley.gradle.RustHost
+import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.android
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -30,7 +30,7 @@ kotlin {
             jvmTarget = JvmTarget.JVM_17
         }
     }
-    if (RustHost.Platform.MacOS.isCurrent) {
+    if (GobleyHost.Platform.MacOS.isCurrent) {
         arrayOf(
             iosArm64(),
             iosSimulatorArm64(),

@@ -1,4 +1,4 @@
-import gobley.gradle.RustHost
+import gobley.gradle.GobleyHost
 import gobley.gradle.rust.dsl.useRustUpLinker
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -53,7 +53,7 @@ kotlin {
     //     }
     // }
 
-    if (RustHost.Platform.MacOS.isCurrent) {
+    if (GobleyHost.Platform.MacOS.isCurrent) {
         arrayOf(
             macosArm64(),
             macosX64(),

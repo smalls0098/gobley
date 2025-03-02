@@ -1,4 +1,4 @@
-import gobley.gradle.RustHost
+import gobley.gradle.GobleyHost
 import gobley.gradle.rust.dsl.hostNativeTarget
 import gobley.gradle.rust.dsl.useRustUpLinker
 import org.gradle.accessors.dm.*
@@ -17,7 +17,7 @@ kotlin {
     jvmToolchain(17)
     jvm()
     hostNativeTarget {
-        if (RustHost.Platform.Windows.isCurrent) {
+        if (GobleyHost.Platform.Windows.isCurrent) {
             compilations.getByName("test") {
                 useRustUpLinker()
             }

@@ -20,5 +20,8 @@ dependencyResolutionManagement {
     }
 }
 
-include(":gradle-plugin")
+include(":gobley-gradle")
+include(":gobley-gradle-rust")
+include(":gobley-gradle-cargo")
+include(":gobley-gradle-uniffi")
 include(":conventions")

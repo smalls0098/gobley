@@ -1,4 +1,4 @@
-import gobley.gradle.RustHost
+import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.jvm
 import gobley.gradle.cargo.dsl.native
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
@@ -11,7 +11,7 @@ plugins {
 
 cargo {
     builds.jvm {
-        embedRustLibrary = (rustTarget == RustHost.current.rustTarget)
+        embedRustLibrary = (rustTarget == GobleyHost.current.rustTarget)
         resourcePrefix = "jvm"
     }
 }

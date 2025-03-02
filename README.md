@@ -115,7 +115,7 @@ customized [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.h
 you can configure them in the `cargo {}` block as well.
 
 ```kotlin
-import gobley.gradle.cargo.rust.profiles.CargoProfile
+import gobley.gradle.cargo.profiles.CargoProfile
 
 cargo {
     features.addAll("foo", "bar")
@@ -267,15 +267,15 @@ current system or not. The list of such targets by the build host is as follows.
 
 To build for specific targets only, you can configure that using the `embedRustLibrary` property. For example, to
 build a shared library for the current build host only, set this property to
-`rustTarget == RustHost.current.rustTarget`.
+`rustTarget == GobleyHost.current.rustTarget`.
 
 ```kotlin
-import gobley.gradle.RustHost
+import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.*
 
 cargo {
     builds.jvm {
-        embedRustLibrary = (rustTarget == RustHost.current.rustTarget)
+        embedRustLibrary = (rustTarget == GobleyHost.current.rustTarget)
     }
 }
 ```
@@ -285,13 +285,13 @@ for JVM when Visual C++ is available. To override this behavior, use the `embedR
 following. Note that Windows on ARM is not available with MinGW.
 
 ```kotlin
-import gobley.gradle.RustHost
-import gobley.gradle.cargo.rust.targets.RustWindowsTarget
+import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.*
+import gobley.gradle.rust.targets.RustWindowsTarget
 
 cargo {
     builds.jvm {
-        if (RustHost.Platform.Windows.isCurrent) {
+        if (GobleyHost.Platform.Windows.isCurrent) {
             when (rustTarget) {
                 RustWindowsTarget.X64 -> embedRustLibrary = false
                 RustPosixTarget.MinGWX64 -> embedRustLibrary = true
@@ -339,7 +339,7 @@ can control that using the `androidUnitTest` property.
 
 ```kotlin
 import gobley.gradle.cargo.dsl.*
-import gobley.gradle.cargo.rust.targets.RustWindowsTarget
+import gobley.gradle.rust.targets.RustWindowsTarget
 
 cargo {
     builds.jvm {
@@ -454,7 +454,7 @@ UniFFI plugin to build bindings from the resulting library binary.
 
 ```kotlin
 import gobley.gradle.Variant
-import gobley.gradle.cargo.rust.targets.RustAndroidTarget
+import gobley.gradle.rust.targets.RustAndroidTarget
 
 plugins {
     kotlin("multiplatform")
@@ -527,7 +527,7 @@ and `KotlinNativeCompilation.useRustUpLinker`.
 build host is not supported yet.
 
 ```kotlin
-import gobley.gradle.cargo.dsl.*
+import gobley.gradle.rust.dsl.*
 
 kotlin {
     hostNativeTarget()
@@ -541,7 +541,7 @@ with `rustup`, so you can use this when your Rust project emits a linker flag th
 LLVM linker.
 
 ```kotlin
-import gobley.gradle.cargo.dsl.*
+import gobley.gradle.rust.dsl.*
 
 kotlin {
     iosArm64().compilations.getByName("main") {
@@ -1065,7 +1065,7 @@ If you want to run projects in `:tests:gradle` or `:examples`, install the follo
 
 See [`.meta/build-image/Dockerfile`](./.meta/build-image/Dockerfile) for more details.
 
-## Option 1 - Dynamically include this plugin in your project
+## Option 1 - Dynamically include the plugins in your project
 
 Clone this repository and reference it from your project. Configure `dependencySubstitution` to use the local plugin
 version.
@@ -1109,11 +1109,18 @@ uniffi {
 }
 ```
 
-## Option 2 - Publish the plugin locally
+## Option 2 - Publish the plugins locally
 
 Clone the repository and build it.
 
-Then invoke `./gradlew :build-logic:gradle-plugin:publishToMavenLocal`.
+Run the following to publish the plugins:
+
+```shell
+./gradlew :build-logic:gobley-gradle:publishToMavenLocal
+./gradlew :build-logic:gobley-gradle-cargo:publishToMavenLocal
+./gradlew :build-logic:gobley-gradle-rust:publishToMavenLocal
+./gradlew :build-logic:gobley-gradle-uniffi:publishToMavenLocal
+```
 
 Add the local repository in your project's `settings.gradle.kts`:
 

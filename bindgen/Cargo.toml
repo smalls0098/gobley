@@ -2,8 +2,8 @@
 name = "gobley-uniffi-bindgen"
 version = "0.1.0"
 edition = "2021"
-authors = ["UniFFI Kotlin Multiplatform bindings team"]
-description = "a Kotlin Multiplatform bindings generator for rust (codegen and cli tooling)"
+authors = ["Gobley Contributors"]
+description = "A UniFFI Kotlin Multiplatform bindings generator for Rust"
 documentation = "https://github.com/gobley/gobley"
 homepage = "https://github.com/gobley/gobley"
 repository = "https://github.com/gobley/gobley"

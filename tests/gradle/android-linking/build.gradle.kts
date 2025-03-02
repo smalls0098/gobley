@@ -1,7 +1,7 @@
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import gobley.gradle.RustHost
+import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.android
-import gobley.gradle.cargo.rust.targets.RustAndroidTarget
+import gobley.gradle.rust.targets.RustAndroidTarget
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -27,9 +27,9 @@ val androidSdkCMakeDirectory = android.sdkDirectory
     ?.firstOrNull { file -> file.name.startsWith("3.") }
     ?.resolve("bin") ?: error("CMake is not installed in Android SDK")
 val androidSdkCMake =
-    androidSdkCMakeDirectory.resolve(RustHost.Platform.current.convertExeName("cmake"))
+    androidSdkCMakeDirectory.resolve(GobleyHost.Platform.current.convertExeName("cmake"))
 val androidSdkNinja =
-    androidSdkCMakeDirectory.resolve(RustHost.Platform.current.convertExeName("ninja"))
+    androidSdkCMakeDirectory.resolve(GobleyHost.Platform.current.convertExeName("ninja"))
 val anotherCustomCppLibraryBuildTasks = androidTargets.associateWith {
     val cmakeOutputDirectory = anotherCustomCppLibraryCmakeOutputDirectories[it]!!
     val libraryLocation = anotherCustomCppLibraryLocations[it]!!
