@@ -66,8 +66,8 @@ private class CargoPluginAndroidDelegateImpl(project: Project) :
         get() = androidExtension.defaultConfig.ndk.abiFilters
 
     override fun addTestSourceDir(variant: Variant, resourceDirectory: Provider<Directory>) {
-        androidExtension.sourceSets { sourceSets ->
-            val testSourceSet = sourceSets.getByVariant("test", variant)
+        androidExtension.sourceSets {
+            val testSourceSet = getByVariant("test", variant)
             testSourceSet.resources.srcDir(resourceDirectory)
         }
     }
@@ -87,8 +87,8 @@ private class CargoPluginAndroidDelegateImpl(project: Project) :
             }
         }
 
-        androidExtension.sourceSets { sourceSets ->
-            val mainSourceSet = sourceSets.getByVariant(variant)
+        androidExtension.sourceSets {
+            val mainSourceSet = getByVariant(variant)
             mainSourceSet.jniLibs.srcDir(jniDirectory)
         }
     }
@@ -99,12 +99,12 @@ private class CargoPluginAndroidDelegateImpl(project: Project) :
         resourceTask: TaskProvider<*>,
         resourceDirectory: Provider<List<File>>
     ) {
-        project.tasks.withType<ProcessJavaResTask>().configureEach { javaResTask ->
-            if (javaResTask.name.contains("UnitTest") && variant == javaResTask.variant!!) {
-                javaResTask.dependsOn(resourceTask)
+        project.tasks.withType<ProcessJavaResTask>().configureEach {
+            if (name.contains("UnitTest") && variant == this.variant!!) {
+                dependsOn(resourceTask)
                 // Override the default behavior of AGP excluding .so files, which causes UnsatisfiedLinkError
                 // on Linux.
-                javaResTask.from(
+                from(
                     // Append a fileTree which only includes the Rust shared library.
                     resourceDirectory
                 )

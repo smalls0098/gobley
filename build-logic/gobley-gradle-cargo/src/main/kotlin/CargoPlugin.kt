@@ -87,16 +87,16 @@ class CargoPlugin : Plugin<Project> {
         @OptIn(InternalGobleyGradleApi::class)
         target.useGlobalLock()
         target.tasks.withType<CargoTask>().configureEach {
-            it.additionalEnvironmentPath.add(cargoExtension.toolchainDirectory)
+            additionalEnvironmentPath.add(cargoExtension.toolchainDirectory)
         }
         target.tasks.withType<RustUpTask>().configureEach {
-            it.additionalEnvironmentPath.add(cargoExtension.toolchainDirectory)
+            additionalEnvironmentPath.add(cargoExtension.toolchainDirectory)
         }
         target.watchPluginChanges()
         target.afterEvaluate {
             target.checkRequiredPlugins()
             target.checkKotlinTargets()
-            applyAfterEvaluate(it)
+            applyAfterEvaluate(this)
         }
     }
 
@@ -115,7 +115,7 @@ class CargoPlugin : Plugin<Project> {
     private fun Project.watchPluginChanges() {
         plugins.withId(PluginIds.KOTLIN_MULTIPLATFORM) {
             kotlinMultiplatformExtension = extensions.getByType()
-            kotlinMultiplatformExtension.targets.configureEach { it.planBuilds() }
+            kotlinMultiplatformExtension.targets.configureEach { planBuilds() }
         }
 
         val androidPluginAction = Action<Plugin<*>> {
@@ -125,7 +125,7 @@ class CargoPlugin : Plugin<Project> {
                 if (abiFilters.isNotEmpty()) {
                     abiFilters.map(::RustAndroidTarget)
                 } else {
-                    RustAndroidTarget.entries
+                    RustAndroidTarget.values().toList()
                 }
             })
         }
@@ -153,7 +153,7 @@ class CargoPlugin : Plugin<Project> {
     private fun KotlinTarget.requiredRustTargets(): List<RustTarget> {
         return when (this) {
             is KotlinJvmTarget -> GobleyHost.current.platform.supportedTargets.filterIsInstance<RustJvmTarget>()
-            is KotlinAndroidTarget -> RustAndroidTarget.entries
+            is KotlinAndroidTarget -> RustAndroidTarget.values().toList()
             is KotlinNativeTarget -> listOf(RustTarget(konanTarget))
             else -> listOf()
         }
@@ -218,13 +218,13 @@ class CargoPlugin : Plugin<Project> {
             for (cargoBuildVariant in cargoBuild.variants) {
                 val projectLayout = layout
                 cargoBuildVariant.buildTaskProvider.configure {
-                    it.nativeStaticLibsDefFile.set(
+                    nativeStaticLibsDefFile.set(
                         projectLayout.outputCacheFile(
-                            it,
+                            this,
                             "nativeStaticLibsDefFile"
                         )
                     )
-                    it.dependsOn(rustUpTargetAddTask)
+                    dependsOn(rustUpTargetAddTask)
                     if (cargoBuildVariant is CargoAndroidBuildVariant) {
                         val environmentVariables = cargoBuildVariant.rustTarget.ndkEnvVariables(
                             sdkRoot = androidDelegate.androidSdkRoot,
@@ -232,7 +232,7 @@ class CargoPlugin : Plugin<Project> {
                             ndkVersion = androidDelegate.androidNdkVersion,
                             ndkRoot = androidDelegate.androidNdkRoot,
                         )
-                        it.additionalEnvironment.putAll(environmentVariables)
+                        additionalEnvironment.putAll(environmentVariables)
                     }
                 }
             }
@@ -261,7 +261,7 @@ class CargoPlugin : Plugin<Project> {
                                 ndkRoot = androidDelegate.androidNdkRoot,
                             ),
                         )
-                        Variant.entries.forEach {
+                        Variant.values().forEach {
                             configureAndroidPostBuildTasks(cargoBuild.variant(it))
                         }
                     }
@@ -292,7 +292,7 @@ class CargoPlugin : Plugin<Project> {
         )
         val projectLayout = layout
         findDynamicLibrariesTask.configure {
-            it.libraryPathsCacheFile.set(projectLayout.outputCacheFile(it, "libraryPathsCacheFile"))
+            libraryPathsCacheFile.set(projectLayout.outputCacheFile(this, "libraryPathsCacheFile"))
         }
 
         val resourcePrefix = cargoBuildVariant.resourcePrefix.orNull?.takeIf(String::isNotEmpty)
@@ -372,7 +372,7 @@ class CargoPlugin : Plugin<Project> {
         val libraryFilesTree = libraryFiles.map { files ->
             fileTree.matching {
                 for (libraryFile in files) {
-                    it.includes += if (resourcePrefix == null) {
+                    includes += if (resourcePrefix == null) {
                         setOf("/${libraryFile.name}")
                     } else {
                         setOf("/$resourcePrefix/${libraryFile.name}")
@@ -400,7 +400,7 @@ class CargoPlugin : Plugin<Project> {
         )
         val projectLayout = layout
         findDynamicLibrariesTask.configure {
-            it.libraryPathsCacheFile.set(projectLayout.outputCacheFile(it, "libraryPathsCacheFile"))
+            libraryPathsCacheFile.set(projectLayout.outputCacheFile(this, "libraryPathsCacheFile"))
         }
 
         @OptIn(InternalGobleyGradleApi::class)
@@ -448,22 +448,22 @@ class CargoPlugin : Plugin<Project> {
             .flatMap { it.libraryFileByCrateType }
             .map { it[CrateType.SystemStaticLibrary]!! }
 
-        kotlinTarget.compilations.getByName("main") { compilation ->
-            compilation.cinterops.register("rust") { cinterop ->
-                cinterop.defFile(buildTask.flatMap { it.nativeStaticLibsDefFile })
-                cinterop.extraOpts(
+        kotlinTarget.compilations.getByName("main") {
+            cinterops.register("rust") {
+                defFile(buildTask.flatMap { it.nativeStaticLibsDefFile })
+                extraOpts(
                     "-libraryPath",
                     cargoExtension.cargoPackage.zip(cargoBuildVariant.profile) { cargoPackage, profile ->
                         cargoPackage.outputDirectory(profile, cargoBuildVariant.rustTarget)
                     }.get()
                 )
-                project.tasks.named(cinterop.interopProcessingTaskName) { task ->
-                    task.inputs.file(buildOutputFile)
-                    task.dependsOn(buildTask)
+                project.tasks.named(interopProcessingTaskName) {
+                    inputs.file(buildOutputFile)
+                    dependsOn(buildTask)
                 }
             }
-            compilation.compileTaskProvider.configure { compileTask ->
-                compileTask.compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
+            compileTaskProvider.configure {
+                compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
             }
         }
     }

@@ -65,7 +65,7 @@ fun KotlinMultiplatformExtension.hostNativeTarget(
 }
 
 fun KotlinNativeCompilation.useRustUpLinker() {
-    compileTaskProvider.configure { compileTask ->
+    compileTaskProvider.configure {
         @OptIn(InternalGobleyGradleApi::class)
         PluginUtils.ensurePluginIsApplied(
             project,
@@ -82,11 +82,12 @@ fun KotlinNativeCompilation.useRustUpLinker() {
         val rustUpLinker = project.rustUpLinker(
             toolchainDirectory?.get() ?: GobleyHost.current.platform.defaultToolchainDirectory
         ).absolutePath
-        compileTask.compilerOptions.freeCompilerArgs.add(
-            "-Xoverride-konan-properties=linker.${GobleyHost.current.konanName}-${target.konanTarget.name}=$rustUpLinker"
+        val konanTarget = this@useRustUpLinker.target.konanTarget
+        compilerOptions.freeCompilerArgs.add(
+            "-Xoverride-konan-properties=linker.${GobleyHost.current.konanName}-${konanTarget.name}=$rustUpLinker"
         )
-        if (GobleyHost.current.konanName == target.konanTarget.name) {
-            compileTask.compilerOptions.freeCompilerArgs.add(
+        if (GobleyHost.current.konanName == konanTarget.name) {
+            compilerOptions.freeCompilerArgs.add(
                 "-Xoverride-konan-properties=linker.${GobleyHost.current.konanName}=$rustUpLinker"
             )
         }

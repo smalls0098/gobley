@@ -29,5 +29,5 @@ sealed interface CargoProfile {
 }
 
 fun CargoProfile(profileName: String): CargoProfile =
-    BuiltInCargoProfile.entries.firstOrNull { it.profileName == profileName }
+    BuiltInCargoProfile.values().firstOrNull { it.profileName == profileName }
         ?: CustomCargoProfile(profileName)

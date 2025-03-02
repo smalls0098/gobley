@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("gobley-gradle-build")
     repositories {
         mavenCentral()
         gradlePluginPortal()

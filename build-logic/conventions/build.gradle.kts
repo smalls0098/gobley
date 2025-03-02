@@ -1,5 +1,6 @@
 plugins {
     `kotlin-dsl`
+    id("gobley-gradle-build")
 }
 
 dependencies {

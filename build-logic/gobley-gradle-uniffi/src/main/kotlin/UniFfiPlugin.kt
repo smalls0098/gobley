@@ -60,7 +60,7 @@ class UniFfiPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         uniFfiExtension = target.extensions.create<UniFfiExtension>(TASK_GROUP, target)
         target.afterEvaluate {
-            applyAfterEvaluate(it)
+            applyAfterEvaluate(this)
         }
     }
 
@@ -83,9 +83,17 @@ class UniFfiPlugin : Plugin<Project> {
             return false
         }
 
-        PluginUtils.ensurePluginIsApplied(project, "Kotlin Multiplatform", PluginIds.KOTLIN_MULTIPLATFORM)
+        PluginUtils.ensurePluginIsApplied(
+            project,
+            "Kotlin Multiplatform",
+            PluginIds.KOTLIN_MULTIPLATFORM
+        )
         PluginUtils.ensurePluginIsApplied(project, "Kotlin AtomicFU", PluginIds.KOTLIN_ATOMIC_FU)
-        PluginUtils.ensurePluginIsApplied(project, "Cargo Kotlin Multiplatform", PluginIds.GOBLEY_CARGO)
+        PluginUtils.ensurePluginIsApplied(
+            project,
+            "Cargo Kotlin Multiplatform",
+            PluginIds.GOBLEY_CARGO
+        )
 
         // Since the Cargo Kotlin Multiplatform plugin is present, `CargoExtension` must be present.
         cargoExtension = extensions.getByType()
@@ -105,6 +113,7 @@ class UniFfiPlugin : Plugin<Project> {
 
     private fun Project.configureBindingTasks() {
         val bindingsGeneration = bindingsGeneration
+
         @OptIn(InternalGobleyGradleApi::class)
         val androidTargetsToBuild = cargoExtension.androidTargetsToBuild.get()
         val buildRustTarget = bindingsGeneration.build.orNull ?: cargoExtension.builds.filter {
@@ -116,7 +125,7 @@ class UniFfiPlugin : Plugin<Project> {
         val availableVariants = build.kotlinTargets.flatMap {
             when (it) {
                 is KotlinJvmTarget -> listOf((build as CargoJvmBuild<*>).jvmVariant.get())
-                is KotlinAndroidTarget -> Variant.entries
+                is KotlinAndroidTarget -> Variant.values().toList()
                 is KotlinNativeTarget -> listOf((build as CargoNativeBuild<*>).nativeVariant.get())
                 else -> emptyList<Variant>()
             }
@@ -152,7 +161,8 @@ class UniFfiPlugin : Plugin<Project> {
             @OptIn(InternalGobleyGradleApi::class)
             DependencyUtils.configureEachCommonProjectDependencies(configurations) { dependencyProject ->
                 if (dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_UNIFFI)
-                    && dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)) {
+                    && dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)
+                ) {
 
                     // Different projects use different class loaders; we need to access those projects'
                     // cargoPackage using reflection.
@@ -162,7 +172,8 @@ class UniFfiPlugin : Plugin<Project> {
                     val cargoPackageProvider = getCargoPackage.invoke(cargoExtension) as Provider<*>
                     val cargoPackage = cargoPackageProvider.get()
 
-                    val getLibraryCrateName = cargoPackage::class.java.getMethod("getLibraryCrateName")
+                    val getLibraryCrateName =
+                        cargoPackage::class.java.getMethod("getLibraryCrateName")
                     val libraryCrateName = getLibraryCrateName.invoke(cargoPackage) as String
 
                     externalPackageConfigByCrateName.put(
@@ -173,7 +184,8 @@ class UniFfiPlugin : Plugin<Project> {
                 }
             }
 
-            val kotlinVersionFromExtension = kotlinMultiplatformExtension.javaClass.`package`.implementationVersion
+            val kotlinVersionFromExtension =
+                kotlinMultiplatformExtension.javaClass.`package`.implementationVersion
             if (kotlinVersionFromExtension != null) {
                 kotlinVersion.set(kotlinVersionFromExtension)
             }
@@ -217,7 +229,8 @@ class UniFfiPlugin : Plugin<Project> {
             @OptIn(InternalGobleyGradleApi::class)
             DependencyUtils.configureEachCommonProjectDependencies(configurations) { dependencyProject ->
                 if (dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_UNIFFI)
-                    && dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)) {
+                    && dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)
+                ) {
 
                     // Different projects use different class loaders; we need to access those projects'
                     // cargoPackage using reflection.
@@ -230,10 +243,13 @@ class UniFfiPlugin : Plugin<Project> {
                     val getRoot = cargoPackage::class.java.getMethod("getRoot")
                     val root = getRoot.invoke(cargoPackage) as Directory
 
-                    val getLibraryCrateName = cargoPackage::class.java.getMethod("getLibraryCrateName")
+                    val getLibraryCrateName =
+                        cargoPackage::class.java.getMethod("getLibraryCrateName")
                     val libraryCrateName = getLibraryCrateName.invoke(cargoPackage) as String
 
-                    configByCrateName.put(libraryCrateName, dependencyProject.mergedConfig.map { it.asFile })
+                    configByCrateName.put(
+                        libraryCrateName,
+                        dependencyProject.mergedConfig.map { it.asFile })
                     rootByCrateName.put(libraryCrateName, root.asFile)
                     dependsOn(dependencyProject.tasks.named("mergeUniffiConfig"))
                 }
@@ -286,22 +302,22 @@ class UniFfiPlugin : Plugin<Project> {
 
         val dummyDefFile = nativeBindingsCInteropDef("dummy")
         val generateDummyDefFileTask = tasks.register("generateDummyDefFile") {
-            it.doLast {
+            doLast {
                 dummyDefFile.get().asFile.run {
                     parentFile.mkdirs()
                     writeBytes(byteArrayOf())
                 }
             }
-            it.mustRunAfter(tasks.named("buildBindings"))
+            mustRunAfter(tasks.named("buildBindings"))
         }
 
-        kotlinMultiplatformExtension.targets.configureEach { kotlinTarget ->
-            when (kotlinTarget) {
-                is KotlinMetadataTarget -> configureKotlinMetadataTarget(kotlinTarget)
-                is KotlinJvmTarget -> configureKotlinJvmTarget(kotlinTarget)
-                is KotlinAndroidTarget -> configureKotlinAndroidTarget(kotlinTarget)
+        kotlinMultiplatformExtension.targets.configureEach {
+            when (this) {
+                is KotlinMetadataTarget -> configureKotlinMetadataTarget(this)
+                is KotlinJvmTarget -> configureKotlinJvmTarget(this)
+                is KotlinAndroidTarget -> configureKotlinAndroidTarget(this)
                 is KotlinNativeTarget -> configureKotlinNativeTarget(
-                    kotlinTarget,
+                    this,
                     dummyDefFile,
                     generateDummyDefFileTask,
                 )
@@ -334,8 +350,8 @@ class UniFfiPlugin : Plugin<Project> {
 
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.configureKotlinAndroidTarget(kotlinAndroidTarget: KotlinAndroidTarget) {
-        kotlinMultiplatformExtension.sourceSets { sourceSets ->
-            val mainSourceSet = sourceSets.getByName("${kotlinAndroidTarget.name}Main")
+        kotlinMultiplatformExtension.sourceSets {
+            val mainSourceSet = getByName("${kotlinAndroidTarget.name}Main")
             with(mainSourceSet) {
                 kotlin.srcDir(androidBindingsDirectory)
                 dependencies {
@@ -370,22 +386,22 @@ class UniFfiPlugin : Plugin<Project> {
         generateDummyDefFileTask: TaskProvider<Task>,
     ) {
         val namespace = bindingsGeneration.namespace.get()
-        kotlinNativeTarget.compilations.getByName("main") { compilation ->
-            compilation.cinterops.register(TASK_GROUP) { cinterop ->
-                cinterop.packageName("$namespace.cinterop")
-                cinterop.header(project.nativeBindingsCInteropHeader(namespace))
+        kotlinNativeTarget.compilations.getByName("main") {
+            cinterops.register(TASK_GROUP) {
+                packageName("$namespace.cinterop")
+                header(project.nativeBindingsCInteropHeader(namespace))
                 // Since linking is handled by CargoPlugin and header is fed above, we don't need the defFile.
-                cinterop.defFile(dummyDefFile)
-                tasks.named(cinterop.interopProcessingTaskName) { task ->
-                    task.inputs.file(dummyDefFile)
-                    task.dependsOn(generateDummyDefFileTask)
+                defFile(dummyDefFile)
+                tasks.named(interopProcessingTaskName) {
+                    inputs.file(dummyDefFile)
+                    dependsOn(generateDummyDefFileTask)
                 }
             }
-            compilation.defaultSourceSet {
+            defaultSourceSet {
                 kotlin.srcDir(nativeBindingsDirectory)
             }
-            compilation.compileTaskProvider.configure { compileTask ->
-                compileTask.compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
+            compileTaskProvider.configure {
+                compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
             }
         }
     }

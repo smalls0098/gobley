@@ -8,14 +8,14 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.buildconfig)
     `maven-publish`
+    alias(libs.plugins.vanniktech.maven.publish)
+    id("gobley-gradle-build")
 }
 
-configureGobleyGradleProject(
-    description = "Common types used by Gobley Gradle plugins.",
-)
-
-kotlin {
-    jvmToolchain(17)
+gobleyGradleBuild {
+    configureGobleyGradleProject(
+        description = "Common types used by Gobley Gradle plugins.",
+    )
 }
 
 dependencies {
@@ -45,9 +45,7 @@ buildConfig {
         }
     }
 
-    val bindgenInfo = BindgenInfo.fromCargoManifest(
-        rootProject.layout.projectDirectory.file("../bindgen/Cargo.toml").asFile
-    )
+    val bindgenInfo = gobleyGradleBuild.bindgenInfo
     buildConfigField("String", "BINDGEN_VERSION", "\"${bindgenInfo.version}\"")
     buildConfigField("String", "BINDGEN_CRATE", "\"${bindgenInfo.name}\"")
     buildConfigField("String", "BINDGEN_BIN", "\"${bindgenInfo.binaryName}\"")

@@ -1,14 +1,15 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.gradle.publish)
+    `kotlin-dsl`
+    alias(libs.plugins.vanniktech.maven.publish)
+    id("gobley-gradle-build")
 }
 
-configureGobleyGradleProject(
-    description = "A Gradle plugin for configuring Rust toolchain and linking Rust libraries to Kotlin projects.",
-)
-
-kotlin {
-    jvmToolchain(17)
+gobleyGradleBuild {
+    configureGobleyGradleProject(
+        description = "A Gradle plugin for configuring Rust toolchain and linking Rust libraries to Kotlin projects.",
+        gradlePlugin = true,
+    )
 }
 
 dependencies {

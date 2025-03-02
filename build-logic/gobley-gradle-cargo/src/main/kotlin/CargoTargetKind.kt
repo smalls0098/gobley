@@ -59,6 +59,6 @@ private object TargetTypeSerializer : KSerializer<CargoTargetKind> {
 
     override fun deserialize(decoder: Decoder): CargoTargetKind {
         val actualName = decoder.decodeString()
-        return CargoTargetKind.entries.first { it.toString() == actualName }
+        return CargoTargetKind.values().first { it.toString() == actualName }
     }
 }

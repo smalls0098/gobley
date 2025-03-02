@@ -3,7 +3,8 @@
 [![License](https://img.shields.io/github/license/gobley/gobley
 )](https://github.com/gobley/gobley/blob/main/LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/gobley-uniffi-bindgen)](https://crates.io/crates/gobley-uniffi-bindgen)
-[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/dev.gobley.uniffi)](https://plugins.gradle.org/plugin/dev.gobley.uniffi)
+[![Gradle Plugin Portal](https://img.shields.io/maven-central/v/dev.gobley.gradle/gobley-gradle
+)](https://central.sonatype.com/artifact/dev.gobley.gradle/gobley-gradle)
 ![Gitlab Build Status](https://img.shields.io/github/check-runs/gobley/gobley/main
 )
 
