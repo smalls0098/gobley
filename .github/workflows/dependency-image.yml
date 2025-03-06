@@ -2,10 +2,19 @@ name: Build Docker image containing required dependencies
 
 on:
   workflow_call:
+    inputs:
+      trigger-event:
+        type: string
     outputs:
       build-image:
         description: "The name of the Docker image"
         value: ${{ jobs.build-image.outputs.build-image }}
+      build-image-name:
+        description: "The name of the Docker image without the hash"
+        value: ${{ jobs.build-image.outputs.build-image-name }}
+      build-image-hash:
+        description: "The hash or the tag of the Docker image"
+        value: ${{ jobs.build-image.outputs.build-image-hash }}
 
 jobs:
   build-image:
@@ -14,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build-image: ${{ steps.build-image.outputs.build-image }}
+      build-image-name: ${{ steps.build-image.outputs.build-image-name }}
+      build-image-hash: ${{ steps.build-image.outputs.build-image-hash }}
     steps:
       - uses: actions/checkout@v4
       - name: Enable Docker CLI experimental features
@@ -24,9 +35,21 @@ jobs:
         id: build-image
         run: |
           BUILD_IMAGE_HASH=$(echo -n "$(cat Cargo.lock .github/workflows/dependency-image.Dockerfile gradle/libs.versions.toml)" | md5sum | cut -c1-8)
-          BUILD_IMAGE="ghcr.io/${{ github.repository }}/dependency-image:$BUILD_IMAGE_HASH"
-          echo "build-image=$BUILD_IMAGE" >> $GITHUB_OUTPUT
+          BUILD_IMAGE_NAME="ghcr.io/${{ github.repository }}/dependency-image"
+          BUILD_IMAGE="$BUILD_IMAGE_NAME:$BUILD_IMAGE_HASH"
           if ! docker manifest inspect $BUILD_IMAGE; then
-            docker build -t $BUILD_IMAGE -f ./.github/workflows/dependency-image.Dockerfile .
-            docker push $BUILD_IMAGE
+            if [ "$BUILD_IMAGE_TRIGGER_EVENT" = "pull_request" ]; then
+              BUILD_IMAGE_HASH="pr-latest"
+              BUILD_IMAGE="$BUILD_IMAGE_NAME:$BUILD_IMAGE_HASH"
+            else
+              docker build -t $BUILD_IMAGE -f ./.github/workflows/dependency-image.Dockerfile .
+              docker push $BUILD_IMAGE
+              docker tag $BUILD_IMAGE $BUILD_IMAGE_NAME:pr-latest
+              docker push $BUILD_IMAGE_NAME:pr-latest
+            fi
           fi
+          echo "build-image=$BUILD_IMAGE" >> $GITHUB_OUTPUT
+          echo "build-image-name=$BUILD_IMAGE_NAME" >> $GITHUB_OUTPUT
+          echo "build-image-hash=$BUILD_IMAGE_HASH" >> $GITHUB_OUTPUT
+        env:
+          BUILD_IMAGE_TRIGGER_EVENT: ${{ inputs.trigger-event }}
