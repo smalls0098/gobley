@@ -11,11 +11,14 @@ import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
 import gobley.gradle.cargo.CargoPackage
 import gobley.gradle.rust.dsl.RustExtension
+import gobley.gradle.rust.dsl.rustVersion
 import gobley.gradle.rust.targets.RustAndroidTarget
 import gobley.gradle.rust.targets.RustAppleMobileTarget
 import gobley.gradle.rust.targets.RustPosixTarget
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.rust.targets.RustWindowsTarget
+import gobley.gradle.utils.RustVersionUtils
+import io.github.z4kn4fein.semver.Version
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.internal.plugins.DslObject
@@ -48,6 +51,12 @@ abstract class CargoExtension(final override val project: Project) : HasProject,
         project.extensions.findByType<RustExtension>()?.toolchainDirectory?.get()
             ?: GobleyHost.current.platform.defaultToolchainDirectory
     }
+
+    internal val rustVersion: Provider<String> =
+        project.objects.property<String>().value(project.rustVersion).apply {
+            disallowChanges()
+            finalizeValueOnRead()
+        }
 
     /**
      * The parsed metadata and manifest of the package.

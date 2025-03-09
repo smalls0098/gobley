@@ -32,6 +32,12 @@ sealed interface RustTarget {
     val friendlyName: String
 
     /**
+     * The target tier as stated in [Platform Support](https://doc.rust-lang.org/stable/rustc/platform-support.html)
+     * in the official documentation.
+     */
+    fun tier(rustVersion: String): Int
+
+    /**
      * The name of the output file by the name of the crate and the type.
      */
     fun outputFileName(crateName: String, crateType: CrateType): String?
@@ -60,9 +66,15 @@ fun RustTarget(konanTarget: KonanTarget): RustTarget = when (konanTarget) {
     KonanTarget.MACOS_X64 -> RustPosixTarget.MacOSX64
     KonanTarget.MINGW_X64 -> RustPosixTarget.MinGWX64
     // MinGW x86 is not supported
-    // TODO: add tvOS targets
+    KonanTarget.TVOS_ARM64 -> RustAppleMobileTarget.TvOsArm64
+    KonanTarget.TVOS_SIMULATOR_ARM64 -> RustAppleMobileTarget.TvOsSimulatorArm64
+    KonanTarget.TVOS_X64 -> RustAppleMobileTarget.TvOsX64
     // WASM targets are not supported
-    // TODO: add watchOS targets
+    KonanTarget.WATCHOS_SIMULATOR_ARM64 -> RustAppleMobileTarget.WatchOsSimulatorArm64
+    KonanTarget.WATCHOS_DEVICE_ARM64 -> RustAppleMobileTarget.WatchOsDeviceArm64
+    KonanTarget.WATCHOS_X64 -> RustAppleMobileTarget.WatchOsX64
+    KonanTarget.WATCHOS_ARM64 -> RustAppleMobileTarget.WatchOsArm64
+    KonanTarget.WATCHOS_ARM32 -> RustAppleMobileTarget.WatchOsArm32
     else -> throw IllegalArgumentException("KonanTarget $konanTarget is not supported")
 }
 

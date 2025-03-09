@@ -1,5 +1,7 @@
 import gobley.gradle.GobleyHost
+import gobley.gradle.cargo.dsl.appleMobile
 import gobley.gradle.rust.dsl.useRustUpLinker
+import gobley.gradle.rust.dsl.rustVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -8,6 +10,19 @@ plugins {
     id("dev.gobley.uniffi")
     alias(libs.plugins.kotlin.atomicfu)
     alias(libs.plugins.android.library)
+}
+
+cargo {
+    builds.appleMobile {
+        variants {
+            if (rustTarget.tier(project.rustVersion.get()) >= 3) {
+                buildTaskProvider.configure {
+                    nightly = true
+                    extraArguments.add("-Zbuild-std")
+                }
+            }
+        }
+    }
 }
 
 uniffi {
@@ -42,6 +57,14 @@ kotlin {
         iosX64()
         macosArm64()
         macosX64()
+        tvosArm64()
+        tvosSimulatorArm64()
+        tvosX64()
+        watchosSimulatorArm64()
+        watchosDeviceArm64()
+        watchosX64()
+        watchosArm64()
+        watchosArm32()
     }
 
     sourceSets {
