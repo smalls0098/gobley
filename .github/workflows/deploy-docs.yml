@@ -1,0 +1,51 @@
+name: Build and deploy documentation
+
+on:
+  push:
+    branches: [ "main*" ]
+  pull_request:
+    branches: [ "main*" ]
+
+jobs:
+  build:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download NPM dependencies
+        run: npm install
+        working-directory: docs
+      - name: Build documentation
+        run: npm run build
+        working-directory: docs
+      - name: Upload build results
+        uses: actions/upload-artifact@v4
+        if: ${{ github.event_name != 'pull_request' }}
+        with:
+          path: docs/build
+  deploy:
+    name: Deploy documentation
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download build results
+        uses: actions/download-artifact@v4
+      - name: Setup pages
+        uses: actions/configure-pages@v5
+      - name: Upload build result
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Deploy documentation to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
