@@ -8,6 +8,7 @@
 - Kotlin/Native tvOS & watchOS support ([#35](https://github.com/gobley/gobley/pull/35)).
 - Kotlin JVM and Kotlin Android Gradle plugins
   support ([#44](https://github.com/gobley/gobley/pull/44) & [#47](https://github.com/gobley/gobley/pull/47)).
+- Config option for using PascalCase for enums ([#54](https://github.com/gobley/gobley/pull/54)).
 
 ### Fixes
 
