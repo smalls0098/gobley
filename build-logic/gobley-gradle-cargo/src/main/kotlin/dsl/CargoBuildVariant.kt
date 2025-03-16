@@ -7,13 +7,15 @@
 package gobley.gradle.cargo.dsl
 
 import gobley.gradle.cargo.tasks.CargoBuildTask
+import gobley.gradle.cargo.tasks.CargoCheckTask
 import gobley.gradle.rust.targets.RustTarget
 import org.gradle.api.tasks.TaskProvider
 
 /**
  * Contains settings for a variant of a build.
  */
-interface CargoBuildVariant<out RustTargetT : RustTarget> : CargoVariant, HasRustTarget<RustTargetT> {
+interface CargoBuildVariant<out RustTargetT : RustTarget> : CargoVariant,
+    HasRustTarget<RustTargetT> {
     /**
      * The build containing this variant.
      */
@@ -29,4 +31,9 @@ interface CargoBuildVariant<out RustTargetT : RustTarget> : CargoVariant, HasRus
      * The build task of the current variant.
      */
     val buildTaskProvider: TaskProvider<CargoBuildTask>
+
+    /**
+     * The check task of the current variant.
+     */
+    val checkTaskProvider: TaskProvider<CargoCheckTask>
 }

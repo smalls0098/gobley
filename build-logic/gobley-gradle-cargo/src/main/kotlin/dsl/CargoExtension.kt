@@ -17,12 +17,11 @@ import gobley.gradle.rust.targets.RustAppleMobileTarget
 import gobley.gradle.rust.targets.RustPosixTarget
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.rust.targets.RustWindowsTarget
-import gobley.gradle.utils.RustVersionUtils
-import io.github.z4kn4fein.semver.Version
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.internal.plugins.DslObject
 import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.reflect.TypeOf
@@ -125,4 +124,10 @@ abstract class CargoExtension(final override val project: Project) : HasProject,
      */
     internal val nativeTargetVariantOverride: MapProperty<RustTarget, Variant> =
         project.objects.mapProperty()
+
+    /**
+     * The Cargo command to use for linting. If you want to Clippy, set this to `clippy`.
+     */
+    val checkCommand: Property<String> =
+        project.objects.property<String>().convention("check")
 }

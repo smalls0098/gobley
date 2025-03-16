@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop";
 $PSNativeCommandUseErrorActionPreference = $true;
 
 try {
-    ./gradlew allTests `
+    ./gradlew check `
         "-Pgobley.projects.gradleTests=false" `
         "-Pgobley.projects.examples=false";
 } finally {

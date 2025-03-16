@@ -9,6 +9,7 @@ package gobley.gradle.cargo.dsl
 import gobley.gradle.Variant
 import gobley.gradle.cargo.CargoPlugin
 import gobley.gradle.cargo.tasks.CargoBuildTask
+import gobley.gradle.cargo.tasks.CargoCheckTask
 import gobley.gradle.cargo.utils.register
 import gobley.gradle.rust.targets.RustTarget
 import org.gradle.api.Project
@@ -31,11 +32,22 @@ abstract class DefaultCargoBuildVariant<out RustTargetT : RustTarget, out CargoB
     @Suppress("UNCHECKED_CAST")
     override val rustTarget: RustTargetT = build.rustTarget as RustTargetT
 
-    override val buildTaskProvider = project.tasks.register<CargoBuildTask>({ +this@DefaultCargoBuildVariant }) {
-        group = CargoPlugin.TASK_GROUP
-        cargoPackage.set(extension.cargoPackage)
-        profile.set(this@DefaultCargoBuildVariant.profile)
-        target.set(this@DefaultCargoBuildVariant.rustTarget)
-        features.set(this@DefaultCargoBuildVariant.features)
-    }
+    override val buildTaskProvider =
+        project.tasks.register<CargoBuildTask>({ +this@DefaultCargoBuildVariant }) {
+            group = CargoPlugin.TASK_GROUP
+            cargoPackage.set(extension.cargoPackage)
+            profile.set(this@DefaultCargoBuildVariant.profile)
+            target.set(this@DefaultCargoBuildVariant.rustTarget)
+            features.set(this@DefaultCargoBuildVariant.features)
+        }
+
+    override val checkTaskProvider =
+        project.tasks.register<CargoCheckTask>({ +this@DefaultCargoBuildVariant }) {
+            group = CargoPlugin.TASK_GROUP
+            cargoPackage.set(extension.cargoPackage)
+            profile.set(this@DefaultCargoBuildVariant.profile)
+            target.set(this@DefaultCargoBuildVariant.rustTarget)
+            features.set(this@DefaultCargoBuildVariant.features)
+            command.convention(extension.checkCommand)
+        }
 }

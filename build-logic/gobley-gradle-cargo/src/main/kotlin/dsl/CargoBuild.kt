@@ -9,6 +9,7 @@ package gobley.gradle.cargo.dsl
 import gobley.gradle.rust.targets.RustTarget
 import org.gradle.api.Named
 import org.gradle.api.NamedDomainObjectCollection
+import org.gradle.api.provider.Property
 import org.jetbrains.kotlin.gradle.plugin.HasProject
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 
@@ -27,4 +28,9 @@ interface CargoBuild<out CargoBuildVariantT : CargoBuildVariant<RustTarget>>
      * The list of Kotlin targets requiring this Rust build.
      */
     val kotlinTargets: NamedDomainObjectCollection<KotlinTarget>
+
+    /**
+     * The Cargo command to use for linting. If you want to Clippy, set this to `clippy`.
+     */
+    val checkCommand: Property<String>
 }

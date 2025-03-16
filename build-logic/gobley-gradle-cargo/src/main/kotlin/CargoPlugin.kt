@@ -260,6 +260,18 @@ class CargoPlugin : Plugin<Project> {
                         additionalEnvironment.putAll(environmentVariables)
                     }
                 }
+                cargoBuildVariant.checkTaskProvider.configure {
+                    dependsOn(rustUpTargetAddTask)
+                    if (cargoBuildVariant is CargoAndroidBuildVariant) {
+                        val environmentVariables = cargoBuildVariant.rustTarget.ndkEnvVariables(
+                            sdkRoot = androidDelegate.androidSdkRoot,
+                            apiLevel = androidDelegate.androidMinSdk,
+                            ndkVersion = androidDelegate.androidNdkVersion,
+                            ndkRoot = androidDelegate.androidNdkRoot,
+                        )
+                        additionalEnvironment.putAll(environmentVariables)
+                    }
+                }
             }
             for (kotlinTarget in cargoBuild.kotlinTargets) {
                 when (kotlinTarget) {
@@ -309,6 +321,7 @@ class CargoPlugin : Plugin<Project> {
         androidTarget: KotlinAndroidTarget?,
     ) {
         val buildTask = cargoBuildVariant.buildTaskProvider
+        val checkTask = cargoBuildVariant.checkTaskProvider
         val findDynamicLibrariesTask = cargoBuildVariant.findDynamicLibrariesTaskProvider
         cargoBuildVariant.dynamicLibrarySearchPaths.add(
             cargoBuildVariant.profile.zip(cargoExtension.cargoPackage) { profile, cargoPackage ->
@@ -359,6 +372,12 @@ class CargoPlugin : Plugin<Project> {
                 } else if (name.contains(kotlinTarget.name)) {
                     dependsOn(copyTask)
                 }
+            }
+        }
+
+        if (cargoBuildVariant.embedRustLibrary.get()) {
+            tasks.named("check") {
+                dependsOn(checkTask)
             }
         }
 
@@ -422,6 +441,7 @@ class CargoPlugin : Plugin<Project> {
         cargoBuildVariant: CargoAndroidBuildVariant,
     ) {
         val buildTask = cargoBuildVariant.buildTaskProvider
+        val checkTask = cargoBuildVariant.checkTaskProvider
         val findDynamicLibrariesTask = cargoBuildVariant.findDynamicLibrariesTaskProvider
         cargoBuildVariant.dynamicLibrarySearchPaths.add(
             cargoBuildVariant.profile.zip(cargoExtension.cargoPackage) { profile, cargoPackage ->
@@ -466,6 +486,10 @@ class CargoPlugin : Plugin<Project> {
         }
 
         androidDelegate.addMainJniDir(this, cargoBuildVariant.variant, copyTask, copyDestination)
+
+        tasks.named("check") {
+            dependsOn(checkTask)
+        }
     }
 
     private fun Project.configureNativeCompilation(
@@ -473,6 +497,7 @@ class CargoPlugin : Plugin<Project> {
         cargoBuildVariant: CargoNativeBuildVariant<*>,
     ) {
         val buildTask = cargoBuildVariant.buildTaskProvider
+        val checkTask = cargoBuildVariant.checkTaskProvider
 
         val buildOutputFile = buildTask
             .flatMap { it.libraryFileByCrateType }
@@ -495,6 +520,10 @@ class CargoPlugin : Plugin<Project> {
             compileTaskProvider.configure {
                 compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
             }
+        }
+
+        tasks.named("check") {
+            dependsOn(checkTask)
         }
     }
 

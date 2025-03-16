@@ -46,5 +46,6 @@ abstract class DefaultCargoBuild<out RustTargetT : RustTarget, out CargoBuildVar
     init {
         @Suppress("LeakingThis")
         features.addAll(extension.features)
+        checkCommand.convention(extension.checkCommand)
     }
 }
