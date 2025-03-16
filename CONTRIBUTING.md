@@ -4,7 +4,8 @@ Thank you for taking the time to contribute to Gobley. We welcome all types of
 contributions: including pull requests, bug reports, and feature requests.
 
 Please read the guide below to get started. If you encounter any difficulties
-setting up the project, please file a 'Help Wanted' issue.
+setting up the project, please create a new question
+in [Discussions](https://github.com/gobley/gobley/discussions) on GitHub.
 
 ## Project setup
 
