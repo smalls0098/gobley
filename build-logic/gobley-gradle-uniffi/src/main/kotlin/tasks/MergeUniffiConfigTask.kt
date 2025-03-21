@@ -7,6 +7,7 @@
 package gobley.gradle.uniffi.tasks
 
 import gobley.gradle.uniffi.Config
+import gobley.gradle.uniffi.dsl.CustomType
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import net.peanuuutz.tomlkt.Toml
@@ -34,11 +35,27 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
 
     @get:Input
     @get:Optional
+    abstract val packageName: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val cdylibName: Property<String>
+
+    @get:Input
+    @get:Optional
     abstract val kotlinMultiplatform: Property<Boolean>
 
     @get:Input
     @get:Optional
     abstract val kotlinTargets: ListProperty<String>
+
+    @get:Input
+    @get:Optional
+    abstract val generateImmutableRecords: Property<Boolean>
+
+    @get:Input
+    @get:Optional
+    abstract val customTypes: MapProperty<String, CustomType>
 
     @get:Input
     @get:Optional
@@ -50,7 +67,15 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
 
     @get:Input
     @get:Optional
+    abstract val disableJavaCleaner: Property<Boolean>
+
+    @get:Input
+    @get:Optional
     abstract val useKotlinXSerialization: Property<Boolean>
+
+    @get:Input
+    @get:Optional
+    abstract val usePascalCaseEnumClass: Property<Boolean>
 
     @get:Input
     @get:Optional
@@ -71,10 +96,27 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
     fun mergeConfig() {
         val originalConfig = originalConfig.orNull?.asFile?.let(::loadConfig) ?: Config()
         val result = originalConfig.copy(
+            packageName = originalConfig.packageName ?: packageName.orNull,
+            cdylibName = originalConfig.cdylibName ?: cdylibName.orNull,
             kotlinMultiplatform = originalConfig.kotlinMultiplatform ?: kotlinMultiplatform.orNull,
             kotlinTargets = mergeSet(
                 originalConfig.kotlinTargets,
                 kotlinTargets.orNull,
+            ),
+            generateImmutableRecords = originalConfig.generateImmutableRecords
+                ?: generateImmutableRecords.orNull,
+            customTypes = mergeMap(
+                originalConfig.customTypes,
+                customTypes.map {
+                    it.mapValues { entry ->
+                        Config.CustomType(
+                            imports = entry.value.imports.orNull,
+                            typeName = entry.value.typeName.orNull,
+                            intoCustom = entry.value.intoCustom.orNull,
+                            fromCustom = entry.value.fromCustom.orNull,
+                        )
+                    }
+                }.orNull,
             ),
             externalPackages = mergeMap(
                 originalConfig.externalPackages,
@@ -82,8 +124,12 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
             ),
             kotlinTargetVersion = originalConfig.kotlinTargetVersion
                 ?: kotlinVersion.orNull?.takeIf { it.isNotBlank() },
+            disableJavaCleaner = originalConfig.disableJavaCleaner
+                ?: disableJavaCleaner.orNull,
             generateSerializableTypes = originalConfig.generateSerializableTypes
                 ?: useKotlinXSerialization.orNull,
+            usePascalCaseEnumClass = originalConfig.usePascalCaseEnumClass
+                ?: usePascalCaseEnumClass.orNull,
             jvmDynamicLibraryDependencies = mergeSet(
                 originalConfig.jvmDynamicLibraryDependencies,
                 jvmDynamicLibraryDependencies.orNull,
@@ -126,10 +172,10 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
         return result.toMap()
     }
 
-    private fun mergeMap(
-        original: Map<String, String>?,
-        new: Map<String, String>?,
-    ): Map<String, String>? {
+    private fun <T> mergeMap(
+        original: Map<String, T>?,
+        new: Map<String, T>?,
+    ): Map<String, T>? {
         if (original == null) return new
         if (new == null) return original
 

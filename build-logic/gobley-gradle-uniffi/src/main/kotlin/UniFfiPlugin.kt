@@ -71,23 +71,15 @@ class UniFfiPlugin : Plugin<Project> {
     }
 
     private fun applyAfterEvaluate(target: Project): Unit = with(target) {
-        if (!findRequiredExtensions()) {
-            return
-        }
-
+        findRequiredExtensions()
         configureBindingTasks()
         configureKotlin()
         configureCleanTasks()
     }
 
     @OptIn(InternalGobleyGradleApi::class)
-    private fun Project.findRequiredExtensions(): Boolean {
-        bindingsGeneration = uniFfiExtension.bindingsGeneration.orNull ?: run {
-            logger.warn(
-                "No bindings generation defined. " + "Please use either a `generateFromUdl` or `generateFromLibrary` block."
-            )
-            return false
-        }
+    private fun Project.findRequiredExtensions() {
+        bindingsGeneration = uniFfiExtension.bindingsGeneration.get()
 
         PluginUtils.ensurePluginIsApplied(
             this,
@@ -130,8 +122,6 @@ class UniFfiPlugin : Plugin<Project> {
                 it.root.file("src/${it.libraryCrateName}.udl")
             }
         )
-
-        return true
     }
 
     private fun Project.configureBindingTasks() {
@@ -207,6 +197,13 @@ class UniFfiPlugin : Plugin<Project> {
                     regularFile.takeIf { it.asFile.exists() }
                 }
             )
+
+            packageName.set(bindingsGeneration.packageName)
+            cdylibName.set(bindingsGeneration.cdylibName)
+            generateImmutableRecords.set(bindingsGeneration.generateImmutableRecords)
+            customTypes.set(bindingsGeneration.customTypes)
+            disableJavaCleaner.set(bindingsGeneration.disableJavaCleaner)
+            usePascalCaseEnumClass.set(bindingsGeneration.usePascalCaseEnumClass)
 
             @OptIn(InternalGobleyGradleApi::class)
             kotlinMultiplatform.set(kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM)

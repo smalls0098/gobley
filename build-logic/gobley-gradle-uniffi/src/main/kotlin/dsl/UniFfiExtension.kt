@@ -8,18 +8,15 @@ package gobley.gradle.uniffi.dsl
 
 import gobley.gradle.BuildConfig
 import gobley.gradle.InternalGobleyGradleApi
-import gobley.gradle.Variant
-import gobley.gradle.rust.targets.RustTarget
 import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.kotlin.dsl.newInstance
 import org.gradle.kotlin.dsl.property
-import javax.inject.Inject
 
+@Suppress("LeakingThis")
 abstract class UniFfiExtension(internal val project: Project) {
     internal val bindgenSource: Property<BindgenSource> =
         project.objects.property<BindgenSource>().convention(BindgenSource.Registry())
@@ -78,14 +75,27 @@ abstract class UniFfiExtension(internal val project: Project) {
         bindgenFromGit(repository, BindgenSource.Git.Commit.Revision(revision))
     }
 
+    internal abstract val userProvidedBindingsGeneration: Property<BindingsGeneration>
+
     internal abstract val bindingsGeneration: Property<BindingsGeneration>
+
+    init {
+        bindingsGeneration.convention(
+            userProvidedBindingsGeneration.orElse(
+                project.provider {
+                    project.objects.newInstance<BindingsGenerationFromLibrary>(project)
+                        .also { userProvidedBindingsGeneration.set(it) }
+                })
+        )
+    }
 
     /**
      * Generate bindings using a UDL file.
      */
     fun generateFromUdl(configure: Action<BindingsGenerationFromUdl> = Action { }) {
-        val generation = bindingsGeneration.orNull ?: project.objects.newInstance<BindingsGenerationFromUdl>(project)
-            .also { bindingsGeneration.set(it) }
+        val generation = userProvidedBindingsGeneration.orNull
+            ?: project.objects.newInstance<BindingsGenerationFromUdl>(project)
+                .also { userProvidedBindingsGeneration.set(it) }
 
         generation as? BindingsGenerationFromUdl
             ?: throw GradleException("A `generateFromLibrary` block has already been defined.")
@@ -98,9 +108,9 @@ abstract class UniFfiExtension(internal val project: Project) {
      * Generate bindings from the build result library file.
      */
     fun generateFromLibrary(configure: Action<BindingsGenerationFromLibrary> = Action { }) {
-        val generation =
-            bindingsGeneration.orNull ?: project.objects.newInstance<BindingsGenerationFromLibrary>(project)
-                .also { bindingsGeneration.set(it) }
+        val generation = userProvidedBindingsGeneration.orNull
+            ?: project.objects.newInstance<BindingsGenerationFromLibrary>(project)
+                .also { userProvidedBindingsGeneration.set(it) }
 
         generation as? BindingsGenerationFromLibrary
             ?: throw GradleException("A `generateFromUdl` block has already been defined.")
@@ -108,38 +118,3 @@ abstract class UniFfiExtension(internal val project: Project) {
         configure.execute(generation)
     }
 }
-
-sealed class BindingsGeneration(internal val project: Project) {
-    /**
-     * The UDL namespace. Defaults to `"$libraryCrateName"`.
-     */
-    abstract val namespace: Property<String>
-
-    /**
-     * The Rust target of the build to use to generate bindings. If unspecified, one of the available builds will be
-     * automatically selected.
-     */
-    abstract val build: Property<RustTarget>
-
-    /**
-     * The variant of the build to use to generate bindings. If unspecified, one of the available variants will be
-     * automatically selected.
-     */
-    abstract val variant: Property<Variant>
-
-    /**
-     * Path to the optional uniffi config file.
-     * If not provided, uniffi-bindgen will try to guess it.
-     */
-    abstract val config: RegularFileProperty
-}
-
-abstract class BindingsGenerationFromUdl @Inject internal constructor(project: Project) : BindingsGeneration(project) {
-    /**
-     * The UDL file. Defaults to `"${crateDirectory}/src/${crateName}.udl"`.
-     */
-    abstract val udlFile: RegularFileProperty
-}
-
-abstract class BindingsGenerationFromLibrary @Inject internal constructor(project: Project) :
-    BindingsGeneration(project)
