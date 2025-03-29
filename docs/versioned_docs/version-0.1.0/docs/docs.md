@@ -1,4 +1,8 @@
-# Getting started
+---
+slug: /
+---
+
+# Overview
 
 We recommend to first read the [UniFFI user guide](https://mozilla.github.io/uniffi-rs/). Then, please read this documentation in the following order.
 
@@ -15,7 +19,7 @@ subscription. Fleet was another option, but JetBrains announced that
 [they are dropping the KMP support in Fleet](https://blog.jetbrains.com/kotlin/2025/02/kotlin-multiplatform-tooling-shifting-gears/).
 
 Therefore, most users may use different IDEs for Kotlin and Rust when developing with this project. For Kotlin, you
-can use Android Studio or IntelliJ IDEA, and for Rust, you can use `rust-analyzer` with Visual Studio Code or RustRover. 
+can use Android Studio or IntelliJ IDEA, and for Rust, you can use `rust-analyzer` with Visual Studio Code or RustRover.
 In normal cases, Kotlin handles the part interacting with users such as UI while Rust handles the core business logic,
 so using two IDEs won't harm the developer experience that much.
 
@@ -52,24 +56,11 @@ reboot. Try restart your Mac if you still have the disk space issue after removi
 
 This project contains three Gradle plugins:
 
-- [The Cargo plugin (`dev.gobley.cargo`)](#the-cargo-plugin)
-- [The UniFFI plugin (`dev.gobley.uniffi`)](#the-uniffi-plugin)
-- [The Rust plugin (`dev.gobley.rust`)](#the-rust-plugin)
-
-These plugins are published in Maven Central. In your `settings.gradle.kts`, put `mavenCentral()` in the
-`pluginManagement {}` block.
-
-```
-pluginManagement {
-    repositories {
-        mavenCentral()
-    }
-}
-```
+- The Cargo plugin (`dev.gobley.cargo`)
+- The UniFFI plugin (`dev.gobley.uniffi`)
+- The Rust plugin (`dev.gobley.rust`)
 
 ### The Cargo plugin
-
-#### Basic usage
 
 The Cargo plugin is responsible for building and linking the Rust library to your Kotlin project. You can use it even
 when you are not using UniFFI. If the `Cargo.toml` is located in the project root, you can simply apply the
@@ -81,8 +72,6 @@ plugins {
     id("dev.gobley.cargo") version "0.1.0"
 }
 ```
-
-#### Configuring Cargo package not in the project root
 
 If the Cargo package is located in another directory, you can configure the path in the `cargo {}` block.
 
@@ -103,8 +92,6 @@ cargo {
     packageDirectory = layout.projectDirectory.dir("rust/src")
 }
 ```
-
-#### Configuring Cargo to use different Cargo features or build profiles
 
 If you want to use Cargo features or
 customized [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.html),
@@ -177,8 +164,6 @@ cargo {
 }
 ```
 
-#### The Cargo plugin only builds for required platforms
-
 Cargo build tasks are configured as the corresponding Kotlin target is added in the `kotlin {}` block. For example, if
 you don't invoke `androidTarget()` in `kotlin {}`, the Cargo plugin won't configure the Android build task as well.
 
@@ -200,8 +185,6 @@ The Cargo plugin scans all the Rust dependencies
 using [`cargo metadata`](https://doc.rust-lang.org/cargo/commands/cargo-metadata.html). If you modify Rust source files
 including those in dependencies defined in the Cargo manifest, the Cargo plugin will rebuild the Cargo project.
 
-#### Changing the NDK version used to build Android binaries
-
 For Android builds, the Cargo plugin automatically determines the SDK and the NDK to use based on the property values of
 the `android {}` block. To use different a NDK version, set `ndkVersion` to that version.
 
@@ -222,8 +205,6 @@ android {
     }
 }
 ```
-
-#### Changing the environment variables used during the build
 
 The Cargo plugin automatically configures environment variables like `ANDROID_HOME` or `CC_<target>` for you, but if you
 need finer control, you can directly configure the properties of the build task. The build task is accessible in the
@@ -255,19 +236,17 @@ cargo {
 }
 ```
 
-#### Configuring the platforms used by the JVM target
-
 For JVM builds, the Cargo plugin tries to build all the targets, whether the required toolchains are installed on the
 current system or not. The list of such targets by the build host is as follows.
 
 | Targets      | Windows | macOS | Linux |
-|--------------|---------|-------|-------|
-| Android      | ✅       | ✅     | ✅     |
-| Apple Mobile | ❌       | ✅     | ❌     |
-| MinGW        | ✅       | ✅     | ✅     |
-| macOS        | ❌       | ✅     | ❌     |
-| Linux        | ✅       | ✅     | ✅     |
-| Visual C++   | ✅       | ❌     | ❌     |
+| ------------ | ------- | ----- | ----- |
+| Android      | ✅      | ✅    | ✅    |
+| Apple Mobile | ❌      | ✅    | ❌    |
+| MinGW        | ✅      | ✅    | ✅    |
+| macOS        | ❌      | ✅    | ❌    |
+| Linux        | ✅      | ✅    | ✅    |
+| Visual C++   | ✅      | ❌    | ❌    |
 
 To build for specific targets only, you can configure that using the `embedRustLibrary` property. For example, to
 build a shared library for the current build host only, set this property to
@@ -333,10 +312,8 @@ cdylib_name = "bar"
 
 The JVM `loadIndirect()` function in the bindings allow users to override the `cdylib_name` value using the
 `uniffi.component.<namespace name>.libraryOverride` system property as well. See the
-[`:tests:uniffi:ext-types:ext-types`](https://github.com/gobley/gobley/tree/main/tests/uniffi/ext-types/ext-types) test
-to see how this works. 
-
-#### Configuring the platforms used by Android local unit tests
+[`:tests:uniffi:ext-types:ext-types`](https://github.com/gobley/gobley/tree/v0.1.0/tests/uniffi/ext-types/ext-types)
+test to see how this works.
 
 Android local unit tests requires JVM targets to be built, as they run in the host machine's JVM. The Cargo plugin
 automatically copies the Rust shared library targeting the host machine into Android local unit tests. It also finds
@@ -350,7 +327,7 @@ import gobley.gradle.rust.targets.RustWindowsTarget
 
 cargo {
     builds.jvm {
-        // Use Visual C++ X64 for Android local unit tests 
+        // Use Visual C++ X64 for Android local unit tests
         androidUnitTest = (rustTarget == RustWindowsTarget.X64)
     }
 }
@@ -434,13 +411,11 @@ kotlin {
 }
 ```
 
-#### Configuring external dynamic libraries your Rust code depends on
-
 If your Rust library is dependent on other shared libraries, you have to ensure that they are also available during
 runtime. For JVM and Android builds, you can use the `dynamicLibraries` and the `dynamicLibrarySearchPaths` properties.
 The specified libraries will be embedded into the resulting JAR or the Android bundle.
 
-```kotlin
+```
 cargo {
     builds.android {
         // Copies libaaudio.so and libc++_shared.so from NDK
@@ -455,40 +430,6 @@ cargo {
 
 Some directories like the NDK installation directory or the Cargo build output directory are already registered in
 `dynamicLibrarySearchPaths`. If your build system uses another directory, add that to this property.
-
-#### Enabling the nightly mode and building tier 3 Rust targets
-
-Some targets like tvOS and watchOS are tier 3 in the Rust world (they are tier 2 on the Kotlin side). Pre-built standard
-libraries are not available for these targets. To use the standard library, you must pass the `-Zbuild-std` flag to the
-`cargo build` command (See [here](https://doc.rust-lang.org/cargo/reference/unstable.html#build-std) for the official
-documentation). Since this flag is available only on the nightly channel, you should tell the Cargo plugin to
-use the nightly compiler to compile the standard library.
-
-First, download the source code of the standard library using the following command.
-
-```
-rustup component add rust-src --toolchain nightly
-```
-
-To get the tier of a `RustTarget`, you can use the `fun RustTarget.tier(version: String): Int`
-function. We can instruct Cargo to build the standard library for tier 3 targets only with it.
-
-```kotlin
-cargo {
-    builds.appleMobile {
-        variants {
-            if (rustTarget.tier(project.rustVersion.get()) >= 3) {
-                buildTaskProvider.configure {
-                    // Pass +nightly to `cargo rustc` (or `cargo build`) to use `-Zbuild-std`.
-                    nightly = true
-                    // Make Cargo build the standard library
-                    extraArguments.add("-Zbuild-std")
-                }
-            }
-        }
-    }
-}
-```
 
 ### The UniFFI plugin
 
@@ -542,12 +483,6 @@ uniffi {
 }
 ```
 
-When you use Kotlin targets not supported by the UniFFI plugin like `js()`, `wasmJs()`, or `wasmWasi()`,
-the UniFFI plugin generates stubs. This ensures that the Kotlin code is compiled successfully for all
-platforms. However, all generated functions except for `RustObject(NoPointer)` constructors will throw
-`kotlin.NotImplementedError`. We are trying to support as many platforms as possible. If you need to
-target WASM/JS, please use these stubs until WASM/JS support is released.
-
 ### The Rust plugin
 
 The Rust plugin is for configuring the Rust toolchain you want to use or linking your Rust library to your Kotlin
@@ -569,11 +504,11 @@ rust {
 ```
 
 The Rust plugin also defines two extension functions `KotlinMultiplatformExtension.hostNativeTarget`
-and `KotlinNativeCompilation.useRustUpLinker` and one extension property `Project.rustVersion`.
+and `KotlinNativeCompilation.useRustUpLinker`.
 
 `hostNativeTarget` can be invoked in `kotlin {}` and adds the Kotlin Native target for the build host; it invokes
 `mingwX64` on Windows, `macosX64` or `macosArm64` on macOS, and `linuxX64` or `linuxArm64` on Linux, though Linux Arm64
-build host is not supported by Kotlin/Native yet.
+build host is not supported yet.
 
 ```kotlin
 import gobley.gradle.rust.dsl.*
@@ -599,14 +534,6 @@ kotlin {
 }
 ```
 
-`rustVersion` retrieves the current Rust version via `rustc --version`.
-
-```kotlin
-import gobley.gradle.rust.dsl.*
-
-println(rustVersion.get()) // e.g. 1.81.0
-```
-
 ## The Bindgen
 
 The bindings generator (the "bindgen") is the program that generates Kotlin source codes connecting your Kotlin code
@@ -615,9 +542,10 @@ don't have to know all the details of the bindgen. Still, you can directly use t
 complicated build system.
 
 The minimum Rust version required to install `gobley-uniffi-bindgen` is `1.72`. Newer Rust versions should
-also work fine. The source code of the bindgen for Kotlin Multiplatform is in [`bindgen`](https://github.com/gobley/gobley/tree/main/bindgen).
-See comments in [`bindgen/src/main.rs`](https://github.com/gobley/gobley/tree/main/bindgen/src/main.rs) or
-[`BuildBindingsTask.kt`](https://github.com/gobley/gobley/tree/main/build-logic/gobley-gradle-uniffi/src/main/kotlin/tasks/BuildBindingsTask.kt)
+also work fine. The source code of the bindgen for Kotlin Multiplatform is in
+[`bindgen`](https://github.com/gobley/gobley/tree/v0.1.0/bindgen). See comments in
+[`bindgen/src/main.rs`](https://github.com/gobley/gobley/tree/v0.1.0/bindgen/src/main.rs) or
+[`BuildBindingsTask.kt`](https://github.com/gobley/gobley/tree/v0.1.0/build-logic/gradle-plugin/src/main/kotlin/io/gitlab/trixnity/gradle/uniffi/tasks/BuildBindingsTask.kt)
 to see how to use the bindgen from the command line.
 
 To install the bindgen, run:
@@ -656,34 +584,27 @@ When the bindings are generated correctly, it has a directory structure like the
 │   └── headers
 │       └── <namespace name>
 │           └── <namespace name>.h
-├── nativeMain
-│   └── kotlin
-│       └── <namespace name>
-│           └── <namespace name>.native.kt
-└── stubMain
+└── nativeMain
     └── kotlin
         └── <namespace name>
-            └── <namespace name>.stub.kt
+            └── <namespace name>.native.kt
 ```
 
 ### Bindgen configuration
 
 Various settings used by the bindgen can be configured in `<manifest dir>/uniffi.toml`. For more
-details, see [`bindgen/src/gen_kotlin_multiplatform/mod.rs`](https://github.com/gobley/gobley/tree/main/bindgen/src/gen_kotlin_multiplatform/mod.rs)
-or [`Config.kt`](https://github.com/gobley/gobley/tree/main/build-logic/gobley-gradle-uniffi/src/main/kotlin/Config.kt).
+details, see [`bindgen/src/gen_kotlin_multiplatform/mod.rs`](https://github.com/gobley/gobley/tree/v0.1.0/bindgen/src/gen_kotlin_multiplatform/mod.rs)
+or [`Config.kt`](https://github.com/gobley/gobley/tree/v0.1.0/build-logic/gradle-plugin/src/main/kotlin/io/gitlab/trixnity/gradle/uniffi/Config.kt).
 
 | Configuration Name                     | Type         | Description                                                                                                                                                                                                                                               |
-|----------------------------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `package_name`                         | String       | The Kotlin package name to use. Defaults to `uniffi.<namespace name>`.                                                                                                                                                                                    |
 | `cdylib_name`                          | String       | The name of the resulting dynamic library without the prefix (e.g. `lib`) and the file extension. Defaults to the library's name when bindings are generated from it, or `uniffi_<namespace>` when generated from a UDL file.                             |
-| `kotlin_multiplatform`                 | Boolean      | When `false`, expect/actual declarations are not used.                                                                                                                                                                                                    |
-| `kotlin_targets`                       | String Array | The list of names of Kotlin targets of the bindings to generate. Possible values are: `jvm`, `android`, `native`, and `stub`.                                                                                                                             |
 | `generate_immutable_records`           | Boolean      | When `true`, generated data classes has `val` properties instead of `var`.                                                                                                                                                                                |
 | `custom_types`                         |              | See [the documentation](https://mozilla.github.io/uniffi-rs/0.28/udl/custom_types.html#custom-types-in-the-bindings-code)                                                                                                                                 |
 | `kotlin_target_version`                | String       | The Kotlin version used by your project. Newer syntax will be used (e.g. `data object` or `Enum.entries`) when the compiler of the specified version supports. This is automatically set to the Kotlin Gradle plugin version by the UniFFI Gradle plugin. |
 | `disable_java_cleaner`                 | Boolean      | When `true`, `com.sun.jna.internal.Cleaner` will be used instead of `android.system.SystemCleaner` or `java.lang.ref.Cleaner`. Defaults to `false`. Consider changing this option when your project targets JVM 1.8.                                      |
 | `generate_serializable_types`          | Boolean      | When `true`, data classes will be annotated with `@kotlinx.serialization.Serializable` when possible. This is automatically set to `true` by the UniFFI Gradle plugin when your Kotlin project uses KotlinX Serialization.                                |
-| `use_pascal_case_enum_class`           | Boolean      | When `true`, enum classes will use PascalCase instead of UPPER_SNAKE_CASE.                                                                                                                                                                                |
 | `jvm_dynamic_library_dependencies`     | String Array | The list of dynamic libraries required by your Rust library on Desktop JVM targets without the prefix and the file extension. Use this if your project depends on an external dynamic library.                                                            |
 | `android_dynamic_library_dependencies` | String Array | The list of dynamic libraries required by your Rust library on Android without the prefix and the file extension.                                                                                                                                         |
 | `dynamic_library_dependencies`         | String Array | The list of dynamic libraries required by your Rust library on both Desktop JVM targets and Android targets.                                                                                                                                              |
@@ -723,7 +644,7 @@ You can manually download Zig [here](https://ziglang.org/download/). If you're u
 manager, you can also install Zig as follows:
 
 | Package Manager      | Command                          | Zig Installation Path                                                   |
-|----------------------|----------------------------------|-------------------------------------------------------------------------|
+| -------------------- | -------------------------------- | ----------------------------------------------------------------------- |
 | WinGet (Windows)     | `winget install -e --id zig.zig` | `%LOCALAPPDATA%\Microsoft\WinGet\Links\zig.exe`                         |
 | Chocolatey (Windows) | `choco install zig`              | `C:\ProgramData\chocolatey\bin\zig.exe`                                 |
 | Homebrew (macOS)     | `brew install zig`               | `/opt/homebrew/bin/zig` (Apple Silicon) or `/usr/local/bin/zig` (Intel) |
@@ -1096,5 +1017,122 @@ binding generator versions such that each generator targets the same `uniffi-rs`
 Here is how `gobley-uniffi-bindgen` versions are tied to `uniffi-rs` are tied:
 
 | gobley-uniffi-bindgen version | uniffi-rs version |
-|-------------------------------|-------------------|
+| ----------------------------- | ----------------- |
 | v0.1.0                        | v0.28.3           |
+
+## Build and use locally
+
+If you want to work on the bindgen or the Gradle plugin locally, you will have to do some additional Gradle
+configuration in order to use these local versions in your projects. Since this project contains many
+unit tests and examples, you may want to opt out of building them. Use the following Gradle properties to
+choose tests and examples to turn on and off.
+
+| Gradle property name          | Projects                                   |
+| ----------------------------- | ------------------------------------------ |
+| `gobley.projects.gradleTests` | `:tests:gradle`                            |
+| `gobley.projects.uniffiTests` | `:tests:uniffi` & `:examples:custom-types` |
+| `gobley.projects.examples`    | `:examples`                                |
+
+These following properties are already in `gradle.properties`. Simply replace `=true` to `=false` to turn
+them off.
+
+If you want to run projects in `:tests:gradle` or `:examples`, install the following dependencies.
+
+- Rust
+- Zig 0.13
+- MinGW (GCC 13)
+- OpenJDK 17
+- Android SDK 35 with CMake (CMake is used by `:tests:gradle:android-linking`)
+- Android NDK
+- Perl (Used to build OpenSSL by `:examples:tokio-blake3-app`)
+- Visual C++ x64 & ARM64 (Windows)
+- Xcode (macOS)
+
+See [`.meta/build-image/Dockerfile`](https://github.com/gobley/gobley/tree/v0.1.0/.meta/build-image/Dockerfile) for more
+details.
+
+### Option 1 - Dynamically include the plugins in your project
+
+Clone this repository and reference it from your project. Configure `dependencySubstitution` to use the local plugin
+version.
+
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+    // ..
+    includeBuild("../uniffi-kotlin-multiplatform-bindings/build-logic")
+    // ...
+    plugins {
+        // comment out id("dev.gobley.uniffi") if you have it here
+    }
+}
+// ...
+includeBuild("../uniffi-kotlin-multiplatform-bindings/build-logic") {
+    dependencySubstitution {
+        substitute(module("dev.gobley.uniffi:gradle-plugin"))
+            .using(project(":gradle-plugin"))
+    }
+}
+```
+
+Add the Gradle plugin to the Gradle build file.
+
+```kotlin
+// build.gradle.kts
+plugins {
+    kotlin("multiplatform")
+    id("dev.gobley.uniffi")
+    // ...
+}
+```
+
+Optionally, configure the `uniffi` extension with the exact path to the bindgen of this repository.
+
+```kotlin
+uniffi {
+    // ...
+    bindgenFromPath("<path-to-our-bindgen>")
+}
+```
+
+### Option 2 - Publish the plugins locally
+
+Clone the repository and build it.
+
+Run the following to publish the plugins:
+
+```shell
+./gradlew :build-logic:gobley-gradle:publishToMavenLocal
+./gradlew :build-logic:gobley-gradle-cargo:publishToMavenLocal
+./gradlew :build-logic:gobley-gradle-rust:publishToMavenLocal
+./gradlew :build-logic:gobley-gradle-uniffi:publishToMavenLocal
+```
+
+Add the local repository in your project's `settings.gradle.kts`:
+
+```kotlin
+pluginManagement {
+    repositories {
+        mavenLocal()
+        // ...
+    }
+}
+```
+
+Optionally, configure the `uniffi` extension with the exact path to the bindgen of this repository.
+
+```kotlin
+uniffi {
+    // ...
+    bindgenFromPath("<path-to-our-bindgen>")
+}
+```
+
+You can also install the bindgen from a git remote as well. Use this method if you don't want to keep the source code of
+this repository on your computer.
+
+```kotlin
+uniffi {
+    bindgenFromGitTag("https://github.com/gobley/gobley", "v0.1.0")
+}
+```

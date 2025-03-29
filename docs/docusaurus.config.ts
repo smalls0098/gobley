@@ -49,7 +49,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: "img/Gobley-Social-Card.svg",
+    image: "img/Gobley-Social-Card.png",
     colorMode: {
       respectPrefersColorScheme: true,
     },
@@ -67,6 +67,12 @@ const config: Config = {
           label: "Tutorial",
         },
         {
+          type: "docSidebar",
+          sidebarId: "documentationSidebar",
+          position: "left",
+          label: "Docs",
+        },
+        {
           type: "docsVersionDropdown",
           position: "right",
           dropdownActiveClassDisabled: true,
@@ -82,11 +88,20 @@ const config: Config = {
       style: "dark",
       links: [
         {
+          title: "Tutorial",
+          items: [
+            {
+              label: "Getting Started",
+              to: "/docs/tutorial",
+            },
+          ],
+        },
+        {
           title: "Docs",
           items: [
             {
-              label: "Tutorial",
-              to: "/docs/tutorial",
+              label: "Overview",
+              to: "/docs",
             },
           ],
         },

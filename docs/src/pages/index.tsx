@@ -22,7 +22,7 @@ function HomepageHeader() {
             className="button button--secondary button--lg"
             to="/docs/tutorial"
           >
-            Get Started in 5 minutes ⏱️
+            Get started in 5 minutes ⏱️
           </Link>
         </div>
       </div>
@@ -31,11 +31,10 @@ function HomepageHeader() {
 }
 
 export default function Home(): ReactNode {
-  const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />"
+      title="Embed Rust into your Kotlin Multiplatform project"
+      description="Embed Rust into your Kotlin Multiplatform project"
     >
       <HomepageHeader />
       <main>
