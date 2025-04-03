@@ -202,15 +202,18 @@ Column(Modifier.safeContentPadding()) {
 }
 ```
 
-<!-- TODO: Modify this after resolving #78 and #79 -->
 ![The Android studio screen after modifying the composable function](./1-tutorial-android/img-6.png)
+
+> :warning: To use Rust functions in Compose preview, you need to disable sandboxing. This is not
+> recommended for security reasons. Please see [#85](https://github.com/gobley/gobley/issues/85) for
+> details.
 
 `Greeter` and `add` exported on the Rust side are accessible on the Kotlin side! Doc-comments are
 also available, so you don't have to write the same description twice.
 
 Let's run the Android app. Hit the Run button on the upper right corner of the screen. You can see
-the Rust library is included in the final app automatically, and the app communicates with the Rust
-part without any issues.
+the Rust library is included in the final app automatically, and the app communicates with Rust
+without any issues.
 
 ![The app screen inside an Android emulator](./1-tutorial-android/img-7.png)
 
