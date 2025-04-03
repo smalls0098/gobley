@@ -8,10 +8,6 @@ plugins {
     alias(libs.plugins.android.library)
 }
 
-cargo {
-    packageDirectory = project.layout.projectDirectory.dir("../coverall")
-}
-
 uniffi {
     bindgenFromPath(rootProject.layout.projectDirectory.dir("bindgen"))
     generateFromLibrary {
@@ -25,11 +21,19 @@ kotlin {
         jvmTarget = JvmTarget.JVM_17
     }
     sourceSets {
+        test {
+            dependencies {
+                implementation(libs.junit)
+                implementation(libs.androidx.test.core)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.assertions.core)
+            }
+        }
         androidTest {
             dependencies {
                 implementation(libs.junit)
-                implementation(libs.androidx.core)
-                implementation(libs.androidx.runner)
+                implementation(libs.androidx.test.core)
+                implementation(libs.androidx.test.runner)
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.kotest.assertions.core)
             }

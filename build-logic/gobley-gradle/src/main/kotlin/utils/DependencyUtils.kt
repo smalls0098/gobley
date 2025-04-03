@@ -6,49 +6,265 @@
 
 package gobley.gradle.utils
 
+import gobley.gradle.DependencyVersions
+import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
+import gobley.gradle.Variant
+import gobley.gradle.rust.targets.RustJvmTarget
+import gobley.gradle.rust.targets.RustTarget
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.file.RegularFile
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.jvm.tasks.Jar
+import org.gradle.kotlin.dsl.support.uppercaseFirstChar
+import java.io.File
+import java.util.Locale
 
+@Suppress("UnstableApiUsage")
 @InternalGobleyGradleApi
 object DependencyUtils {
-    fun configureEachDependentProjects(
-        currentProject: Project,
-        action: (Project) -> Unit,
+    private fun configureEachCommonProjectDependencies(
+        configurations: ConfigurationContainer,
+        action: (ProjectDependency) -> Unit,
     ) {
-        // A set of projects known to be dependent on `currentProject`.
-        val consumedDependentProjects = mutableSetOf(currentProject)
-        // A partial inverse graph of the project dependency graph, only containing the part not connected to
-        // `currentProject`.
-        val unconsumedDirectDependentsByProject = currentProject.rootProject.allprojects.associateWith {
-            mutableSetOf<Project>()
+        configureEachCommonDependencies(configurations) { dependency ->
+            if (dependency is ProjectDependency) {
+                action(dependency)
+            }
         }
-        for (project in currentProject.rootProject.allprojects) {
-            project.configurations.configureEach { configuration ->
-                configuration.dependencies.configureEach { dependency ->
-                    if (dependency is ProjectDependency) {
-                        // If this dependency points to a project that is already consumed, this project is also
-                        // (indirectly) dependent on currentProject.
-                        if (consumedDependentProjects.contains(dependency.dependencyProject)) {
-                            // Perform DFS starting at `project`.
-                            val stack = arrayListOf(project)
-                            while (stack.isNotEmpty()) {
-                                val stackItem = stack.removeLast()
-                                // Visit `stackItem` if not visited.
-                                if (!consumedDependentProjects.contains(stackItem)) {
-                                    consumedDependentProjects.add(stackItem)
-                                    action(stackItem)
-                                    // Consume items in the inverse graph as well.
-                                    stack.addAll(unconsumedDirectDependentsByProject[stackItem]!!)
-                                    unconsumedDirectDependentsByProject[stackItem]!!.clear()
-                                }
-                            }
-                        } else {
-                            // Otherwise, just store the dependency for future use.
-                            unconsumedDirectDependentsByProject[dependency.dependencyProject]!!.add(project)
+    }
+
+    private fun addDependencyEachCommonProjectDependencies(
+        currentProject: Project,
+        configurationName: String
+    ) {
+        configureEachCommonProjectDependencies(currentProject.configurations) { dependency ->
+            currentProject.dependencies.add(
+                configurationName,
+                currentProject.project(dependency.path),
+            )
+        }
+    }
+
+    private val rustRuntimeRustTargetAttribute = Attribute.of("rustTarget", String::class.java)
+    private val rustVariantAttribute = Attribute.of("rustVariant", String::class.java)
+
+    private fun Configuration.addAttributes(
+        superConfiguration: Configuration,
+        rustTarget: RustTarget,
+        variant: Variant,
+    ) {
+        extendsFrom(superConfiguration)
+        attributes.attribute(rustRuntimeRustTargetAttribute, rustTarget.friendlyName)
+        attributes.attribute(rustVariantAttribute, variant.toString())
+    }
+
+    fun createCargoConfigurations(currentProject: Project) {
+        val rustRuntimeOnlyConfiguration =
+            currentProject.configurations.dependencyScope("rustRuntimeOnly")
+        addDependencyEachCommonProjectDependencies(currentProject, "rustRuntimeOnly")
+
+        for (rustTarget in GobleyHost.current.platform.supportedTargets) {
+            if (rustTarget !is RustJvmTarget) {
+                continue
+            }
+            for (variant in Variant.entries) {
+                currentProject.configurations.resolvable(
+                    androidUnitTestRuntimeRustLibraryConfigurationName(
+                        rustTarget, variant
+                    )
+                ) { configuration ->
+                    configuration.addAttributes(
+                        superConfiguration = rustRuntimeOnlyConfiguration.get(),
+                        rustTarget = rustTarget,
+                        variant = variant,
+                    )
+                }
+                currentProject.configurations.consumable(
+                    androidUnitTestConsumableRuntimeRustLibraryConfigurationName(
+                        rustTarget, variant
+                    )
+                ) { configuration ->
+                    configuration.addAttributes(
+                        superConfiguration = rustRuntimeOnlyConfiguration.get(),
+                        rustTarget = rustTarget,
+                        variant = variant,
+                    )
+                }
+            }
+        }
+    }
+
+    fun resolveCargoDependencies(currentProject: Project) {
+        for (rustTarget in GobleyHost.current.platform.supportedTargets) {
+            if (rustTarget !is RustJvmTarget) {
+                continue
+            }
+            for (variant in Variant.entries) {
+                val androidUnitTestConfiguration = currentProject.configurations.findByName(
+                    androidUnitTestRuntimeRustLibraryConfigurationName(
+                        rustTarget, variant
+                    )
+                ) ?: continue
+                registerAndroidUnitTestLibraryToClassPaths(
+                    currentProject,
+                    androidUnitTestConfiguration,
+                )
+            }
+        }
+    }
+
+    private fun registerAndroidUnitTestLibraryToClassPaths(
+        currentProject: Project,
+        configuration: Configuration,
+    ) {
+        val variant = Variant(configuration.attributes.getAttribute(rustVariantAttribute)!!)
+        val dependencies = configuration.incoming
+        val dependencyJars =
+            currentProject.files(dependencies.artifacts.resolvedArtifacts.map { artifacts ->
+                artifacts.map { it.file }
+            })
+        PluginUtils.withKotlinPlugin(currentProject) { delegate ->
+            if (delegate.androidTarget != null) {
+                // For Compose previews
+                if (variant == Variant.Debug) {
+                    with(delegate.sourceSets.androidMain(variant)) {
+                        dependencies {
+                            runtimeOnly(dependencyJars)
                         }
+                    }
+                }
+                with(delegate.sourceSets.androidUnitTest(variant)) {
+                    dependencies {
+                        runtimeOnly(dependencyJars)
+                    }
+                }
+            }
+        }
+    }
+
+    fun addAndroidUnitTestRuntimeRustLibraryJar(
+        currentProject: Project,
+        rustTarget: RustTarget,
+        variant: Variant,
+        jarTaskProvider: Provider<Jar>
+    ) {
+        val configurationName = androidUnitTestConsumableRuntimeRustLibraryConfigurationName(
+            rustTarget, variant
+        )
+        currentProject.artifacts.add(configurationName, jarTaskProvider)
+    }
+
+    private fun androidUnitTestRuntimeRustLibraryConfigurationName(
+        rustTarget: RustTarget,
+        variant: Variant,
+    ): String {
+        return StringBuilder().apply {
+            append(rustTarget.friendlyName.replaceFirstChar { it.lowercase(Locale.US) })
+            append("RustRuntimeAndroidUnitTest")
+            append(variant.toString().uppercaseFirstChar())
+        }.toString()
+    }
+
+    private fun androidUnitTestConsumableRuntimeRustLibraryConfigurationName(
+        rustTarget: RustTarget,
+        variant: Variant,
+    ): String {
+        return StringBuilder().apply {
+            append(rustTarget.friendlyName.replaceFirstChar { it.lowercase(Locale.US) })
+            append("RustRuntimeAndroidUnitTestConsumable")
+            append(variant.toString().uppercaseFirstChar())
+        }.toString()
+    }
+
+    private val uniFfiUsageAttribute = Attribute.of("uniFfiUsage", String::class.java)
+
+    private fun Configuration.addAttributes(
+        superConfiguration: Configuration,
+        uniffiUsage: String,
+    ) {
+        extendsFrom(superConfiguration)
+        attributes.attribute(uniFfiUsageAttribute, uniffiUsage)
+    }
+
+    fun createUniFfiConfigurations(currentProject: Project) {
+        val uniFfiImplementationConfiguration =
+            currentProject.configurations.dependencyScope("uniFfiImplementation")
+        addDependencyEachCommonProjectDependencies(currentProject, "uniFfiImplementation")
+
+        currentProject.configurations.resolvable("uniFfiConfiguration") { configuration ->
+            configuration.addAttributes(
+                superConfiguration = uniFfiImplementationConfiguration.get(),
+                uniffiUsage = "uniFfiConfig"
+            )
+        }
+        currentProject.configurations.consumable("uniFfiConfigurationConsumable") { configuration ->
+            configuration.addAttributes(
+                superConfiguration = uniFfiImplementationConfiguration.get(),
+                uniffiUsage = "uniFfiConfig"
+            )
+        }
+        currentProject.configurations.resolvable("uniFfiCargoManifest") { configuration ->
+            configuration.addAttributes(
+                superConfiguration = uniFfiImplementationConfiguration.get(),
+                uniffiUsage = "cargoManifest"
+            )
+        }
+        currentProject.configurations.consumable("uniFfiCargoManifestConsumable") { configuration ->
+            configuration.addAttributes(
+                superConfiguration = uniFfiImplementationConfiguration.get(),
+                uniffiUsage = "cargoManifest"
+            )
+        }
+    }
+
+    fun addUniFfiConfigTasks(
+        currentProject: Project,
+        uniFfiConfigTask: TaskProvider<*>,
+        cargoManifest: Provider<RegularFile>,
+    ) {
+        currentProject.artifacts.add("uniFfiConfigurationConsumable", uniFfiConfigTask)
+        currentProject.artifacts.add("uniFfiCargoManifestConsumable", cargoManifest)
+    }
+
+    fun getExternalPackageUniFfiConfigurations(currentProject: Project): Provider<List<File>>? {
+        val configuration = currentProject.configurations.findByName("uniFfiConfiguration")
+            ?: return null
+        val dependencies = configuration.incoming
+        return dependencies.artifacts.resolvedArtifacts.map { artifacts ->
+            artifacts.map { it.file }
+        }
+    }
+
+    fun resolveUniFfiDependencies(currentProject: Project) {
+        val configuration = currentProject.configurations.findByName("uniFfiCargoManifest")
+            ?: return
+        val dependencies = configuration.incoming
+        val externalCargoManifests = dependencies.artifacts.resolvedArtifacts.map { artifacts ->
+            artifacts.map { it.file }
+        }
+        val jnaDependency = externalCargoManifests.map {
+            // Don't apply JNA when there's no dependency on UniFFI
+            if (it.isEmpty()) currentProject.files()
+            else "net.java.dev.jna:jna:${DependencyVersions.JNA}"
+        }
+        PluginUtils.withKotlinPlugin(currentProject) { delegate ->
+            if (delegate.androidTarget != null) {
+                // For Compose previews
+                with(delegate.sourceSets.androidMain(Variant.Debug)) {
+                    dependencies {
+                        runtimeOnly(jnaDependency)
+                    }
+                }
+                with(delegate.sourceSets.androidUnitTest) {
+                    dependencies {
+                        runtimeOnly(jnaDependency)
                     }
                 }
             }
@@ -60,22 +276,8 @@ object DependencyUtils {
         action: (Dependency) -> Unit,
     ) {
         configurations.configureEach { configuration ->
-            if (configuration.name == "commonMainApi"
-                || configuration.name == "commonMainImplementation"
-                || configuration.name == "commonMainCompileOnly"
-            ) {
+            if (configuration.name == "commonMainApi" || configuration.name == "commonMainImplementation" || configuration.name == "commonMainCompileOnly") {
                 configuration.dependencies.configureEach(action)
-            }
-        }
-    }
-
-    fun configureEachCommonProjectDependencies(
-        configurations: ConfigurationContainer,
-        action: (Project) -> Unit,
-    ) {
-        configureEachCommonDependencies(configurations) { dependency ->
-            if (dependency is ProjectDependency) {
-                action(dependency.dependencyProject)
             }
         }
     }

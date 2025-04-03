@@ -6,7 +6,10 @@
 
 package gobley.gradle.rust
 
+import gobley.gradle.InternalGobleyGradleApi
+import gobley.gradle.PluginIds
 import gobley.gradle.rust.dsl.RustExtension
+import gobley.gradle.utils.DependencyUtils
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.create
@@ -22,6 +25,23 @@ class RustPlugin : Plugin<Project> {
     private lateinit var rustExtension: RustExtension
 
     override fun apply(target: Project) {
+        @OptIn(InternalGobleyGradleApi::class)
+        if (!target.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)) {
+            DependencyUtils.createCargoConfigurations(target)
+        }
+        @OptIn(InternalGobleyGradleApi::class)
+        if (!target.plugins.hasPlugin(PluginIds.GOBLEY_UNIFFI)) {
+            DependencyUtils.createUniFfiConfigurations(target)
+        }
         rustExtension = target.extensions.create<RustExtension>(TASK_GROUP)
+        @OptIn(InternalGobleyGradleApi::class)
+        target.afterEvaluate {
+            if (!target.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)) {
+                DependencyUtils.resolveCargoDependencies(target)
+            }
+            if (!target.plugins.hasPlugin(PluginIds.GOBLEY_UNIFFI)) {
+                DependencyUtils.resolveUniFfiDependencies(target)
+            }
+        }
     }
 }
