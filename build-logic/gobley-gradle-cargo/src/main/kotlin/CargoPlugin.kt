@@ -33,6 +33,7 @@ import gobley.gradle.rust.targets.RustJvmTarget
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.tasks.useGlobalLock
 import gobley.gradle.utils.DependencyUtils
+import gobley.gradle.utils.GradleUtils
 import gobley.gradle.utils.PluginUtils
 import gobley.gradle.variant
 import org.gradle.api.GradleException
@@ -46,17 +47,16 @@ import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.listProperty
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
+import org.gradle.language.jvm.tasks.ProcessResources
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
-import java.io.File
 
 class CargoPlugin : Plugin<Project> {
     companion object {
@@ -339,6 +339,7 @@ class CargoPlugin : Plugin<Project> {
         val buildTask = cargoBuildVariant.buildTaskProvider
         val checkTask = cargoBuildVariant.checkTaskProvider
         val findDynamicLibrariesTask = cargoBuildVariant.findDynamicLibrariesTaskProvider
+        val jarTask = cargoBuildVariant.jarTaskProvider
         cargoBuildVariant.dynamicLibrarySearchPaths.add(
             cargoBuildVariant.profile.zip(cargoExtension.cargoPackage) { profile, cargoPackage ->
                 cargoPackage.outputDirectory(profile, cargoBuildVariant.rustTarget).asFile
@@ -348,21 +349,7 @@ class CargoPlugin : Plugin<Project> {
         findDynamicLibrariesTask.configure {
             libraryPathsCacheFile.set(projectLayout.outputCacheFile(this, "libraryPathsCacheFile"))
         }
-
-        val libraryFiles = project.objects.listProperty<File>().apply {
-            add(buildTask.flatMap { task ->
-                task.libraryFileByCrateType.map { it[CrateType.SystemDynamicLibrary]!!.asFile }
-            })
-            addAll(findDynamicLibrariesTask.flatMap { it.libraryPaths })
-        }
-
-        val jarTask = tasks.register<Jar>({
-            +"jvmRustRuntime"
-            +cargoBuildVariant
-        }) {
-            group = TASK_GROUP
-            from(libraryFiles)
-            into(cargoBuildVariant.resourcePrefix)
+        jarTask.configure {
             val variantSuffix = when (val variant = cargoBuildVariant.variant) {
                 Variant.Debug -> "-$variant"
                 else -> ""
@@ -386,13 +373,52 @@ class CargoPlugin : Plugin<Project> {
             dependsOn(buildTask, findDynamicLibrariesTask)
         }
 
+        // For Kotlin/JVM projects without the application plugin or the Compose Multiplatform
+        // plugin, the dynamic libraries must be copied in the resources directory to be loaded
+        // during runtime. See #95.
+        //
+        // To avoid being included in the resources when class files are packaged into a JAR file,
+        // `copyLibrariesTask` is invoked only when `GradleUtils.invokedByKotlinJvmBuild()`
+        // returns `false`.
+        val resourcePrefix = cargoBuildVariant.resourcePrefix.orNull?.takeIf(String::isNotEmpty)
+        val resourceDirectory = layout.buildDirectory
+            .dir("intermediates/rust/${cargoBuildVariant.rustTarget.rustTriple}/${cargoBuildVariant.variant}")
+        val resourceCopyDestination = if (resourcePrefix == null) {
+            resourceDirectory
+        } else resourceDirectory.map {
+            it.dir(resourcePrefix)
+        }
+        val copyLibrariesTask = tasks.register<Copy>({
+            +"jvm"
+            +cargoBuildVariant
+        }) {
+            from(cargoBuildVariant.libraryFiles)
+            into(resourceCopyDestination)
+            dependsOn(buildTask, findDynamicLibrariesTask)
+        }
+
         @OptIn(InternalGobleyGradleApi::class)
         if (
             kotlinTarget !is KotlinAndroidTarget
             && cargoBuildVariant.embedRustLibrary.get()
             && cargoBuildVariant.variant == cargoBuildVariant.build.jvmVariant.get()
         ) {
+            val invokedByKotlinJvmBuild = GradleUtils.invokedByKotlinJvmBuild(gradle)
+            if (invokedByKotlinJvmBuild) {
+                val expectedTaskName = when (kotlinExtensionDelegate.pluginId) {
+                    PluginIds.KOTLIN_JVM -> "processResources"
+                    else -> "${kotlinTarget.name}ProcessResources"
+                }
+                tasks.withType<ProcessResources> {
+                    if (name == expectedTaskName) {
+                        dependsOn(copyLibrariesTask)
+                    }
+                }
+            }
             with(kotlinExtensionDelegate.sourceSets.jvmMain) {
+                if (invokedByKotlinJvmBuild) {
+                    resources.srcDir(resourceDirectory)
+                }
                 dependencies {
                     runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
                 }
