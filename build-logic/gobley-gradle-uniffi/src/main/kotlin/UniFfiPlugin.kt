@@ -29,6 +29,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
@@ -40,6 +41,7 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
@@ -377,11 +379,21 @@ class UniFfiPlugin : Plugin<Project> {
             if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID) {
                 androidDelegate.addMainSourceDir(sourceDirectory = mainBindingsDirectory)
             }
-            dependencies {
-                implementation("com.squareup.okio:okio:${DependencyVersions.OKIO}")
-                implementation("org.jetbrains.kotlinx:atomicfu:${DependencyVersions.KOTLINX_ATOMICFU}")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${DependencyVersions.KOTLINX_DATETIME}")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${DependencyVersions.KOTLINX_COROUTINES}")
+            if (uniFfiExtension.addDependencies.get()) {
+                dependencies {
+                    implementation("com.squareup.okio:okio") {
+                        version { prefer(DependencyVersions.OKIO) }
+                    }
+                    implementation("org.jetbrains.kotlinx:atomicfu") {
+                        version { prefer(DependencyVersions.KOTLINX_ATOMICFU) }
+                    }
+                    implementation("org.jetbrains.kotlinx:kotlinx-datetime") {
+                        version { prefer(DependencyVersions.KOTLINX_DATETIME) }
+                    }
+                    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core") {
+                        version { prefer(DependencyVersions.KOTLINX_COROUTINES) }
+                    }
+                }
             }
         }
     }
@@ -392,8 +404,12 @@ class UniFfiPlugin : Plugin<Project> {
             if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM) {
                 kotlin.srcDir(jvmBindingsDirectory)
             }
-            dependencies {
-                implementation("net.java.dev.jna:jna:${DependencyVersions.JNA}")
+            if (uniFfiExtension.addDependencies.get()) {
+                dependencies {
+                    implementation("net.java.dev.jna:jna") {
+                        version { prefer(DependencyVersions.JNA) }
+                    }
+                }
             }
         }
     }
@@ -404,19 +420,37 @@ class UniFfiPlugin : Plugin<Project> {
             if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM) {
                 kotlin.srcDir(androidBindingsDirectory)
             }
-            dependencies {
-                implementation("net.java.dev.jna:jna:${DependencyVersions.JNA}@aar")
-                implementation("androidx.annotation:annotation:${DependencyVersions.ANDROIDX_ANNOTATION}")
+            if (uniFfiExtension.addDependencies.get()) {
+                dependencies {
+                    implementation("net.java.dev.jna:jna@aar") {
+                        version { prefer(DependencyVersions.JNA) }
+                    }
+                    implementation("androidx.annotation:annotation") {
+                        version { prefer(DependencyVersions.KOTLINX_COROUTINES) }
+                    }
+                }
             }
         }
+        val jnaDependency = kotlinExtensionDelegate.sourceSets.androidMain.getConflictingDependency(
+            "net.java.dev.jna:jna:${DependencyVersions.JNA}"
+        )
+        val jnaVersion = jnaDependency?.version ?: DependencyVersions.JNA
         with(kotlinExtensionDelegate.sourceSets.androidMain(Variant.Debug)) {
-            dependencies {
-                runtimeOnly("net.java.dev.jna:jna:${DependencyVersions.JNA}")
+            if (uniFfiExtension.addDependencies.get()) {
+                dependencies {
+                    implementation("net.java.dev.jna:jna") {
+                        version { prefer(jnaVersion) }
+                    }
+                }
             }
         }
         with(kotlinExtensionDelegate.sourceSets.androidUnitTest) {
-            dependencies {
-                runtimeOnly("net.java.dev.jna:jna:${DependencyVersions.JNA}")
+            if (uniFfiExtension.addDependencies.get()) {
+                dependencies {
+                    implementation("net.java.dev.jna:jna") {
+                        version { prefer(jnaVersion) }
+                    }
+                }
             }
         }
     }
@@ -486,3 +520,16 @@ private fun Project.nativeBindingsCInteropDef(libraryCrateName: String): Provide
 
 private fun Project.nativeBindingsCInteropHeader(namespace: String): Provider<RegularFile> =
     nativeBindingsCInteropDirectory.map { it.file("headers/$namespace/$namespace.h") }
+
+private fun KotlinSourceSet.getConflictingDependency(
+    dependencyNotation: String,
+): ExternalModuleDependency? {
+    val dependencyToAdd =
+        project.dependencies.create(dependencyNotation) as ExternalModuleDependency
+    val configuration = project.configurations.getByName(implementationConfigurationName)
+    return configuration.dependencies.firstOrNull { dependency ->
+        dependency is ExternalModuleDependency
+                && dependency.module.group == dependencyToAdd.module.group
+                && dependency.module.name == dependencyToAdd.module.name
+    } as? ExternalModuleDependency
+}
