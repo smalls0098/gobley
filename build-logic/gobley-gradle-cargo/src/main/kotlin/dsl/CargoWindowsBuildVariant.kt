@@ -55,5 +55,11 @@ abstract class CargoWindowsBuildVariant @Inject constructor(
     }) {
         from(libraryFiles)
         into(resourcePrefix)
+        val variantSuffix = when (variant) {
+            Variant.Debug -> "-$variant"
+            else -> ""
+        }
+        archiveClassifier.set(resourcePrefix.map { "$it$variantSuffix" })
+        dependsOn(buildTaskProvider, findDynamicLibrariesTaskProvider)
     }
 }

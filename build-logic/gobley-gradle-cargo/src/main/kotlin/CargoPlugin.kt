@@ -43,6 +43,8 @@ import org.gradle.api.Task
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.jvm.tasks.Jar
@@ -78,6 +80,7 @@ class CargoPlugin : Plugin<Project> {
         }
         cargoExtension = target.extensions.create<CargoExtension>(TASK_GROUP, target)
         cargoExtension.jvmVariant.convention(Variant.Debug)
+        cargoExtension.jvmPublishingVariant.convention(Variant.Release)
         cargoExtension.nativeVariant.convention(Variant.Debug)
         readVariantsFromXcode()
         cargoExtension.builds.native {
@@ -88,6 +91,7 @@ class CargoPlugin : Plugin<Project> {
         }
         cargoExtension.builds.jvm {
             jvmVariant.convention(cargoExtension.jvmVariant)
+            jvmPublishingVariant.convention(cargoExtension.jvmPublishingVariant)
         }
         @OptIn(InternalGobleyGradleApi::class)
         target.useGlobalLock()
@@ -349,29 +353,6 @@ class CargoPlugin : Plugin<Project> {
         findDynamicLibrariesTask.configure {
             libraryPathsCacheFile.set(projectLayout.outputCacheFile(this, "libraryPathsCacheFile"))
         }
-        jarTask.configure {
-            val variantSuffix = when (val variant = cargoBuildVariant.variant) {
-                Variant.Debug -> "-$variant"
-                else -> ""
-            }
-            @OptIn(InternalGobleyGradleApi::class)
-            archiveClassifier.set(
-                when (kotlinExtensionDelegate.pluginId) {
-                    PluginIds.KOTLIN_JVM -> cargoBuildVariant.resourcePrefix.map { "$it$variantSuffix" }
-                    PluginIds.KOTLIN_ANDROID -> cargoBuildVariant.resourcePrefix.map {
-                        "android-local-$it$variantSuffix"
-                    }
-
-                    else -> cargoBuildVariant.resourcePrefix.map {
-                        when {
-                            kotlinTarget is KotlinAndroidTarget -> "android-local-$it$variantSuffix"
-                            else -> "${kotlinTarget.name}-$it$variantSuffix"
-                        }
-                    }
-                }
-            )
-            dependsOn(buildTask, findDynamicLibrariesTask)
-        }
 
         // For Kotlin/JVM projects without the application plugin or the Compose Multiplatform
         // plugin, the dynamic libraries must be copied in the resources directory to be loaded
@@ -421,6 +402,23 @@ class CargoPlugin : Plugin<Project> {
                 }
                 dependencies {
                     runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
+                }
+            }
+        }
+
+        @OptIn(InternalGobleyGradleApi::class)
+        if (
+            kotlinTarget !is KotlinAndroidTarget
+            && cargoBuildVariant.embedRustLibrary.get()
+            && cargoBuildVariant.variant == cargoBuildVariant.build.jvmPublishingVariant.get()
+            && cargoExtension.publishJvmArtifacts.get()
+            && kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM
+        ) {
+            plugins.withId("maven-publish") {
+                val publishing = extensions.getByType(PublishingExtension::class.java)
+                val publication = publishing.publications.getByName(kotlinTarget.name)
+                if (publication is MavenPublication) {
+                    publication.artifact(jarTask)
                 }
             }
         }

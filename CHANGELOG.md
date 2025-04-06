@@ -5,7 +5,7 @@
 ### Breaking Changes
 
 - Separate artifacts for JVM runtime Rust dynamic
-  libraries ([#81](https://github.com/gobley/gobley/pull/81)).
+  libraries ([#81](https://github.com/gobley/gobley/pull/81) & [#102](https://github.com/gobley/gobley/pull/102)).
 
 ### New Features
 
