@@ -17,6 +17,7 @@
 - `CargoCheckTask` for cross-platform linting ([#55](https://github.com/gobley/gobley/pull/55)).
 - `UniFfiPlugin` can be used without a UniFFI config
   file ([#63](https://github.com/gobley/gobley/pull/63)).
+- UniFFI bindings generation during IDE sync ([#101](https://github.com/gobley/gobley/pull/101)).
 
 ### Fixes
 

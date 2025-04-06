@@ -292,6 +292,11 @@ class UniFfiPlugin : Plugin<Project> {
             dependsOn(cargoBuildTaskForBindings, installBindgen, mergeUniffiConfig)
         }
 
+        if (uniFfiExtension.generateDuringSync.get()) {
+            @OptIn(InternalGobleyGradleApi::class)
+            GradleUtils.runTaskDuringSync(this, buildBindings)
+        }
+
         tasks.withType<KotlinCompilationTask<*>> {
             dependsOn(buildBindings)
         }

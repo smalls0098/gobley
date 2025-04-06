@@ -35,6 +35,14 @@ abstract class UniFfiExtension(internal val project: Project) {
         project.objects.property<Boolean>().convention(true)
 
     /**
+     * When set to `true`, Bindings will be generated during IDE sync except for Kotlin/Native
+     * targets. For Kotlin/Native targets, due to `cinterop`, bindings are always generated during
+     * IDE sync.
+     */
+    val generateDuringSync: Property<Boolean> =
+        project.objects.property<Boolean>().convention(true)
+
+    /**
      * Install the bindgen of the given [version] from the given [registry]. If [registry] is not specified, this will
      * download the bindgen from `crates.io`.
      */

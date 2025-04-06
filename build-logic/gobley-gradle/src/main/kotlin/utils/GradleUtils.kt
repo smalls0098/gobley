@@ -8,6 +8,8 @@ package gobley.gradle.utils
 
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
+import org.gradle.api.Project
+import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.invocation.Gradle
 
 @InternalGobleyGradleApi
@@ -62,6 +64,16 @@ object GradleUtils {
             strictlyCalling(gradle, listOf(":compileDebugSources")) -> Variant.Debug
             strictlyCalling(gradle, listOf(":compileReleaseSources")) -> Variant.Release
             else -> null
+        }
+    }
+
+    fun runTaskDuringSync(project: Project, vararg paths: Any) {
+        if (!invokedByIdeSync()) return
+        try {
+            project.rootProject.tasks.named("prepareKotlinBuildScriptModel") { syncTask ->
+                syncTask.dependsOn(*paths)
+            }
+        } catch (_: UnknownDomainObjectException) {
         }
     }
 }
