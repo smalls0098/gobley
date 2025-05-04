@@ -65,7 +65,12 @@ RUN sdkmanager --install \
     "platform-tools;35.0.2" \
     "platforms;android-35" \
     "ndk;27.0.12077973"
-RUN yes | sdkmanager --licenses
+# RUN mkdir -p $ANDROID_HOME/licenses && \
+#     touch $ANDROID_HOME/licenses/android-sdk-license && \
+#     echo "8933bad161af4178b1185d1a37fbf41ea5269c55" >> $ANDROID_HOME/licenses/android-sdk-license && \
+#     echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_HOME/licenses/android-sdk-license && \
+#     echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> $ANDROID_HOME/licenses/android-sdk-license && \
+#     yes | sdkmanager --licenses
 
 # Download dependencies to warm the cache
 COPY . /dependency-hot-plate
