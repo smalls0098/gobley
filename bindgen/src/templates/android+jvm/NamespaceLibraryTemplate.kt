@@ -84,7 +84,6 @@ internal interface UniffiLib : Library {
         internal val INSTANCE: UniffiLib by lazy {
             loadIndirect<UniffiLib>(componentName = "{{ ci.namespace() }}")
                 .also { lib: UniffiLib ->
-                    uniffiCheckContractApiVersion(lib)
                     uniffiCheckApiChecksums(lib)
                     {% for fn in self.initialization_fns() -%}
                     {{ fn }}(lib)
@@ -104,16 +103,6 @@ internal interface UniffiLib : Library {
         {%- call kt::arg_list_ffi_decl(func, 8) %}
     ): {% match func.return_type() %}{% when Some with (return_type) %}{{ return_type.borrow()|ffi_type_name_by_value }}{% when None %}Unit{% endmatch %}
     {% endfor %}
-}
-
-private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
-    // Get the bindings contract version from our ComponentInterface
-    val bindings_contract_version = {{ ci.uniffi_contract_version() }}
-    // Get the scaffolding contract version by calling the into the dylib
-    val scaffolding_contract_version = lib.{{ ci.ffi_uniffi_contract_version().name() }}()
-    if (bindings_contract_version != scaffolding_contract_version) {
-        throw RuntimeException("UniFFI contract version mismatch: try cleaning and rebuilding your project")
-    }
 }
 
 {% if ci.iter_checksums().next().is_none() -%}
