@@ -2,7 +2,7 @@
 slug: /gradle-plugins
 ---
 
-# Using the Gradle plugin
+# Using the Gradle plugins
 
 This project contains three Gradle plugins:
 
@@ -20,3 +20,6 @@ pluginManagement {
     }
 }
 ```
+
+If you're using multi-project builds, please
+read [The Rust plugin](./3-rust-plugin.md).

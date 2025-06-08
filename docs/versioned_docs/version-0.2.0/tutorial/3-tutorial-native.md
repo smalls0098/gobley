@@ -1,13 +1,13 @@
 ---
-slug: /tutorial-jvm
+slug: /tutorial-native
 ---
 
-# Getting started (JVM)
+# Getting started (Native)
 
 Welcome to Gobley! Gobley is a set of libraries and tools that help you mix Rust and Kotlin, so you
 can focus on implementing your business logic. In this tutorial, you will learn how to embed Rust
-code into your Kotlin/JVM project using Gobley. If you have trouble setting up your project, please
-create a question in [GitHub Discussions](https://github.com/gobley/gobley/discussions).
+code into your Kotlin/Native project using Gobley. If you have trouble setting up your project,
+please create a question in [GitHub Discussions](https://github.com/gobley/gobley/discussions).
 
 ## Prerequisites
 
@@ -27,25 +27,18 @@ To develop in Rust, you need:
       the [Rust plugin](https://www.jetbrains.com/help/idea/rust-plugin.html).
     - Other editors like Vim. Still, using `rust-analyzer` is recommended.
 
-## Creating a Kotlin/JVM project
+## Creating a Kotlin/Native project
 
-Let's first create a new Kotlin/JVM project.
+Let's first create a new Kotlin/Native project.
 
 1. Open IntelliJ IDEA.
-2. Select **File > New > New Project**.
-3. Select **Kotlin**.
-4. Rename the project to `MyFirstGobleyProject`.
-5. Select **Gradle** as the build system.
-6. Select **Kotlin** as the Gradle DSL.
-7. Change the GroupId to `dev.gobley.myfirstproject`.
+2. Select **File > New > Project from Version Control**.
+3. In the URL field, enter `https://github.com/Kotlin/kmp-native-wizard`.
+4. Change the directory name to `MyFirstGobleyProject` and click **Clone**.
 
-![The new project screen](./2-tutorial-jvm/img-1.png)
+![The IntelliJ IDEA screen after the project opened](./3-tutorial-native/img-1.png)
 
-8. Click the **Create** button, and the project will open.
-
-![The IntelliJ IDEA screen after the project opened](./2-tutorial-jvm/img-2.png)
-
-## Adding Rust to your Kotlin/JVM project
+## Adding Rust to your Kotlin/Native project
 
 Let's add a Cargo package to the Kotlin/JVM project.
 
@@ -75,9 +68,9 @@ Let's add a Cargo package to the Kotlin/JVM project.
    > :bulb: This is the folder where Cargo stores the build intermediate files and the final Rust
    > library.
 
-4. (Optional) Move `src/lib.rs` to `src/main/rust/lib.rs`.
+4. (Optional) Move `src/lib.rs` to `src/nativeMain/rust/lib.rs`.
 
-   ![The IntelliJ IDEA screen after moving lib.rs](./2-tutorial-jvm/img-3.png)
+   ![The IntelliJ IDEA screen after moving lib.rs](./3-tutorial-native/img-2.png)
 
    > :bulb: When you use CMake in an Android project, C++ source files are usually located in
    > `src/main/cpp`. This procedure imitates that behavior. It feels more organized, isn't it?
@@ -97,37 +90,27 @@ Let's add a Cargo package to the Kotlin/JVM project.
 
    # This as well.
    [lib]
-   crate-type = ["cdylib"]
+   crate-type = ["staticlib"]
    # Put this only if you moved lib.rs.
-   path = "src/main/rust/lib.rs"
+   path = "src/nativeMain/rust/lib.rs"
    ```
 
    Let's see what each part of the modification does:
 
     - `uniffi = "0.28.3"` downloads UniFFI, the library used to generate the Kotlin code (the "
       bindings") that calls the Rust library.
-    - `crate-type = ["cdylib"]` will make Cargo generate a `.dll` (Windows), `.dylib` (macOS), or
-      `.so` (Linux) file that can be used by Gobley.
-    - `path = "src/main/rust/lib.rs"` designates the path to the Rust source code.
+    - `crate-type = ["staticlib"]` will make Cargo generate a `.lib` (Windows) or a `.a` (macOS &
+      Linux) file that can be used by Gobley.
+    - `path = "src/nativeMain/rust/lib.rs"` designates the path to the Rust source code.
 
-6. Modify `build.gradle.kts` like the following.
+6. Add the required Gradle plugins to `build.gradle.kts` as shown below.
 
    ```kotlin
-   import gobley.gradle.GobleyHost
-   import gobley.gradle.cargo.dsl.jvm
-
    plugins {
-       kotlin("jvm") version "<kotlin version>"
+       // Other plugins here
        id("dev.gobley.cargo") version "0.2.0"
        id("dev.gobley.uniffi") version "0.2.0"
-       kotlin("plugin.atomicfu") version "<kotlin version>"
-   }
-
-   cargo {
-       builds.jvm {
-           // Build Rust library only for the host platform
-           embedRustLibrary = (GobleyHost.current.rustTarget == rustTarget)
-       }
+       kotlin("plugin.atomicfu") version libs.versions.kotlin
    }
    ```
 
@@ -138,21 +121,80 @@ Let's add a Cargo package to the Kotlin/JVM project.
 
    Let's see what each plugin does:
 
-    - `dev.gobley.cargo` builds and links the Rust library to the Kotlin application. The `cargo {}`
-      block controls Rust build options. In the above code, we instructed Cargo to build the library
-      only for the host platform.
+    - `dev.gobley.cargo` builds and links the Rust library to the Kotlin application.
     - `dev.gobley.uniffi` generates the bindings using UniFFI. You can change the package name of
       the bindings inside the `uniffi {}` block.
     - `org.jetbrains.kotlin.plugin.atomicfu` is to use atomic types used by the bindings.
 
+7. (Windows only) Modify `build.gradle.kts` as follows.
+
+   > :warning: Due to a limitation in UniFFI versions 0.28.3 and earlier regarding COFF support,
+   > UniFFI cannot read Windows static libraries, regardless of whether you're using Visual C++
+   > or MinGW. A fix for this
+   > issue ([mozilla/uniffi-rs#2500](https://github.com/mozilla/uniffi-rs/pull/2500)) was introduced
+   > in UniFFI 0.29.2. This version of UniFFI will be supported in Gobley 0.3.
+
+   This configuration directs Gobley to use the Linux binary as input for UniFFI. Note that building
+   for Linux on Windows requires additional toolchain setup. For detailed instructions, please refer
+   to [Linux cross-compilation on Windows or macOS](../docs/4-cross-compilation-tips.md#linux-cross-compilation-on-windows-or-macos).
+
+   ```kotlin
+   import gobley.gradle.GobleyHost
+   import gobley.gradle.rust.dsl.hostNativeTarget
+   import gobley.gradle.rust.targets.RustPosixTarget
+
+   // Plugins here
+   
+   uniffi {
+       generateFromLibrary {
+           // Make UniFFI generate bindings using the Linux X64 build on Windows
+           if (GobleyHost.Platform.Windows.isCurrent) {
+               build = RustPosixTarget.LinuxX64
+           }
+       }
+   }
+   
+   kotlin {
+       // Comment out the original code
+       // val hostOs = System.getProperty("os.name")
+       // val isArm64 = System.getProperty("os.arch") == "aarch64"
+       // val isMingwX64 = hostOs.startsWith("Windows")
+       // val nativeTarget = when {
+       //     hostOs == "Mac OS X" && isArm64 -> macosArm64("native")
+       //     hostOs == "Mac OS X" && !isArm64 -> macosX64("native")
+       //     hostOs == "Linux" && isArm64 -> linuxArm64("native")
+       //     hostOs == "Linux" && !isArm64 -> linuxX64("native")
+       //     isMingwX64 -> mingwX64("native")
+       //     else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+       // }
+
+       val nativeTargets = listOfNotNull(
+           // hostNativeTarget("native") is equivalent to the above
+           hostNativeTarget(),
+           // Build for Linux as well on Windows
+           if (GobleyHost.Platform.Windows.isCurrent) linuxX64() else null,
+       )
+
+       nativeTargets.forEach { target ->
+           target.binaries {
+               executable {
+                   entryPoint = "main"
+               }
+           }
+       }
+   
+       // Other settings here 
+   }
+   ```
+
 We're now ready to code both in Rust and Kotlin!
 
 > :question: If you hit the **Sync Now** button at this point, you'll get a
-> `Crate my_first_gobley_project not found in [lib]my_first_gobley_project.{dll, dylib, so}` error.
-> That's because you haven't used `uniffi::setup_scaffolding!();` inside the Rust code. If you
-> encountered such an error, go straight to the next step.
+> `Crate compose_app not found in libcompose_app.a` error. That's because you haven't used
+> `uniffi::setup_scaffolding!();` inside the Rust code. If you encountered such an error, go
+> straight to the next step.
 
-![The IntelliJ screen after configuring the Gradle plugins](./2-tutorial-jvm/img-4.png)
+![The IntelliJ screen after configuring the Gradle plugins](./3-tutorial-native/img-3.png)
 
 ## Defining and exposing Rust types and functions
 
@@ -165,7 +207,7 @@ open -a "Visual Studio Code" .
 ```
 
 Once `rust-analyzer` is ready, you can see highlightings and inlay hints in the code editor. Modify
-`src/main/rust/lib.rs` as follows.
+`src/nativeMain/rust/lib.rs` as follows.
 
 ```rust
 /// This exports this Rust function to the Kotlin side.
@@ -198,19 +240,17 @@ impl Greeter {
 uniffi::setup_scaffolding!();
 ```
 
-![The Visual Studio Code screen after modifying lib.rs](./2-tutorial-jvm/img-5.png)
+![The Visual Studio Code screen after modifying lib.rs](./3-tutorial-native/img-4.png)
 
 By just applying `#[uniffi::export]` or similar macros, the functions and the types become available
 on the Kotlin side. Go back to IntelliJ IDEA and press the **Sync Gradle Changes** button.
 
-![The IntelliJ screen before pressing the Sync Gradle Changes button](./2-tutorial-jvm/img-6.png)
+![The IntelliJ screen before pressing the Sync Gradle Changes button](./3-tutorial-native/img-5.png)
 
 Cargo will start building the Rust library inside IntelliJ IDEA. After the build completes, modify
-`src/main/kotlin/Main.kt` as follows.
+`src/nativeMain/kotlin/Main.kt` as follows.
 
 ```kotlin
-package dev.gobley.myfirstproject
-
 import uniffi.my_first_gobley_project.Greeter
 import uniffi.my_first_gobley_project.add
 
@@ -225,10 +265,10 @@ fun main() {
 `Greeter` and `add` exported on the Rust side are accessible on the Kotlin side! Doc-comments are
 also available, so you don't have to write the same description twice.
 
-Let's run the program. Hit the Run button on the upper right corner of the screen. You can see the
-program communicates with Rust without any issues.
+Let's run the program. Hit the Run button next to the `main()` function. You can see the program
+communicates with Rust without any issues.
 
-![The IntelliJ IDEA screen showing the run result](./2-tutorial-jvm/img-7.png)
+![The IntelliJ IDEA screen showing the run result](./3-tutorial-native/img-6.png)
 
 ## Next step
 

@@ -78,9 +78,9 @@ const config: Config = {
           dropdownActiveClassDisabled: true,
         },
         {
-          href: "https://github.com/gobley/gobley",
-          label: "GitHub",
+          type: "custom-githubStargazersCountButton",
           position: "right",
+          repository: "gobley/gobley",
         },
       ],
     },

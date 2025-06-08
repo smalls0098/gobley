@@ -66,8 +66,10 @@ When the bindings are generated correctly, it has a directory structure like the
 
 ## Bindgen configuration
 
-Various settings used by the bindgen can be configured in `<manifest dir>/uniffi.toml`. For more
-details, see [
+Various settings used by the bindgen can be configured in `<manifest dir>/uniffi.toml`, or the
+`uniffi {}` block in Gradle scripts. To learn more about configuring UniFFI settings using Gradle,
+see [Configuring Bindgen settings using Gradle DSL](./2-gradle-plugins/2-uniffi-plugin.md#configuring-bindgen-settings-using-gradle-dsl).
+For more details about each configuration, see [
 `bindgen/src/gen_kotlin_multiplatform/mod.rs`](https://github.com/gobley/gobley/tree/main/bindgen/src/gen_kotlin_multiplatform/mod.rs)
 or [
 `Config.kt`](https://github.com/gobley/gobley/tree/main/build-logic/gobley-gradle-uniffi/src/main/kotlin/Config.kt).

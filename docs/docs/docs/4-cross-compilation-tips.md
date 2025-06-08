@@ -93,7 +93,7 @@ If you installed Zig with WinGet, the content is:
 %LOCALAPPDATA%\Microsoft\WinGet\Links\zig.exe cc -target x86_64-linux-gnu %*
 ```
 
-Similarly, in `aarch64-unknown-linux-gnu-cc.sh`, put as follows:
+Similarly, in `aarch64-unknown-linux-gnu-cc.bat`, put as follows:
 
 ```batch
 @echo off
@@ -106,10 +106,10 @@ option is to modify `%USERPROFILE%\.cargo\config.toml` as follows.
 
 ```toml
 [target.x86_64-unknown-linux-gnu]
-linker = "C:\\Users\\<user name>\\.cargo\\x86_64-unknown-linux-gnu.bat"
+linker = "C:\\Users\\<user name>\\.cargo\\x86_64-unknown-linux-gnu-cc.bat"
 
 [target.aarch64-unknown-linux-gnu]
-linker = "C:\\Users\\<user name>\\.cargo\\aarch64-unknown-linux-gnu.bat"
+linker = "C:\\Users\\<user name>\\.cargo\\aarch64-unknown-linux-gnu-cc.bat"
 ```
 
 You're ready to start building your library and application for Linux.
@@ -548,6 +548,261 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.17.0@aar")
 }
 ```
+
+## Stripping debug information and symbol names from Android NDK binaries
+
+When publishing an app, it's recommended to reduce its size by stripping debug information and
+symbol names from native libraries. Both Cargo and the Android Gradle Plugin offer options to
+control whether debug information is stripped. While this doesn't prevent decompilation or
+tampering, some Android developers choose to do it because they're concerned that attackers might
+exploit this information. However, removing this information can make it more challenging to debug
+issues, both during development and after your app has been published.
+
+### Debug information and symbol names are essential for debugging native app crashes
+
+Debug information is useful when debugging your app during development. In Android Studio's
+debugging settings, there is an option to attach native debugger. If debug information is preserved
+in the shared object, the debugger can use that information, so you can set breakpoints and inspect
+the value of local variables at runtime, which can help you resolving potential panics or crashes
+within Rust (native) functions.
+
+> :warning: While it is **possible** to set breakpoints in Rust functions, Android Studio currently
+> does not allow setting them directly in the editor for Rust code. To set a breakpoint in a Rust
+> function, you would need to manually pause the app during a debugging session and then use the
+> `breakpoint set` command in the LLDB console.
+
+| The debugger settings                                                                   | Debugging example                                                                             |
+|-----------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------| 
+| ![The native debugger settings in Android Studio](./4-cross-compilation-tips/img-1.png) | ![Debugging example using the `breakpoint set` command](./4-cross-compilation-tips/img-2.png) |
+
+Symbol names are useful when you encounter app crashes inside a Rust (or a native) function. It
+is used to map the addresses inside the call stack to a location in source code. Even when it is not
+available during the runtime, the mapping process can be performed later using the [
+`ndk-stack`](https://developer.android.com/ndk/guides/ndk-stack) tool inside NDK. When you upload
+the symbol names to Google Play or Firebase Crashlytics, these services uses `ndk-stack` to show the
+deobfuscated stacktrace as well.
+
+So before deciding to stripping all the debug information while building the app, let's explore how
+it is handled throughout the building and the releasing process.
+
+### How Cargo and AGP use LLVM to strip debug information and symbol names
+
+A shared object file consists of multiple sections. For instance, the `.text` section contains the
+library's machine code, while the `.rodata` section holds read-only data, such as the initial values
+of global variables. Other sections store various additional information. Debug information is
+stored in sections with names starting with `.debug_`. Symbol names reside in the `.strtab` section,
+which is referenced by entries in the `.symtab` section. Therefore, stripping this information
+involves removing the `.debug_*`, `.strtab`, and `.symtab` sections from the shared object.
+
+To verify the presence of these sections, you can use the `llvm-readelf` command in the NDK.
+
+```shell
+<Android SDK Root>/ndk/<NDK version>/toolchains/llvm/prebuilt/<Host Triplet>/bin/llvm-readelf -S target/<target triplet>/<profile>/libyour_project.so
+```
+
+The `llvm-readelf` command reports the complete list of sections in the shared object. Executing the
+`llvm-readelf` command will display the list similar to the following example. In the example, you
+can observe that the `.debug_abbrev` is at index 24, and `.symtab` at 30.
+
+```
+There are 33 section headers, starting at offset 0x2aafd8:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [ 1] .note.android.ident NOTE          0000000000000270 000270 000098 00   A  0   0  4
+  [ 2] .dynsym           DYNSYM          0000000000000308 000308 000330 18   A  6   1  8
+  [ 3] .gnu.version      VERSYM          0000000000000638 000638 000044 02   A  2   0  2
+  [ 4] .gnu.version_r    VERNEED         000000000000067c 00067c 000040 00   A  6   2  4
+  [ 5] .gnu.hash         GNU_HASH        00000000000006c0 0006c0 000020 00   A  2   0  8
+  [ 6] .dynstr           STRTAB          00000000000006e0 0006e0 00019b 00   A  0   0  1
+  [ 7] .rela.dyn         RELA            0000000000000880 000880 001c80 18   A  2   0  8
+  [ 8] .rela.plt         RELA            0000000000002500 002500 0002e8 18  AI  2  19  8
+  [ 9] .gcc_except_table PROGBITS        00000000000027e8 0027e8 001d48 00   A  0   0  4
+  [10] .rodata           PROGBITS        0000000000004530 004530 002940 00 AMS  0   0 16
+  [11] .eh_frame_hdr     PROGBITS        0000000000006e70 006e70 000a64 00   A  0   0  4
+  [12] .eh_frame         PROGBITS        00000000000078d8 0078d8 004a58 00   A  0   0  8
+  [13] .text             PROGBITS        000000000000d330 00c330 0179d8 00  AX  0   0  4
+  [14] .plt              PROGBITS        0000000000024d10 023d10 000210 00  AX  0   0 16
+  [15] .data.rel.ro      PROGBITS        0000000000025f20 023f20 0013b8 00  WA  0   0  8
+  [16] .fini_array       FINI_ARRAY      00000000000272d8 0252d8 000010 00  WA  0   0  8
+  [17] .dynamic          DYNAMIC         00000000000272e8 0252e8 000180 10  WA  6   0  8
+  [18] .got              PROGBITS        0000000000027468 025468 000070 00  WA  0   0  8
+  [19] .got.plt          PROGBITS        00000000000274d8 0254d8 000110 00  WA  0   0  8
+  [20] .relro_padding    NOBITS          00000000000275e8 0255e8 000a18 00  WA  0   0  1
+  [21] .data             PROGBITS        00000000000285e8 0255e8 000068 00  WA  0   0  8
+  [22] .bss              NOBITS          0000000000028650 025650 000918 00  WA  0   0  8
+  [23] .comment          PROGBITS        0000000000000000 025650 0001ae 01  MS  0   0  1
+  [24] .debug_abbrev     PROGBITS        0000000000000000 0257fe 000aae 00      0   0  1
+  [25] .debug_info       PROGBITS        0000000000000000 0262ac 0a4b5b 00      0   0  1
+  [26] .debug_aranges    PROGBITS        0000000000000000 0cae07 006470 00      0   0  1
+  [27] .debug_str        PROGBITS        0000000000000000 0d1277 0e855c 01  MS  0   0  1
+  [28] .debug_line       PROGBITS        0000000000000000 1b97d3 04ab52 00      0   0  1
+  [29] .debug_ranges     PROGBITS        0000000000000000 204325 092af0 00      0   0  1
+  [30] .symtab           SYMTAB          0000000000000000 296e18 00a050 18     32 1677  8
+  [31] .shstrtab         STRTAB          0000000000000000 2a0e68 000157 00      0   0  1
+  [32] .strtab           STRTAB          0000000000000000 2a0fbf 00a016 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  R (retain), p (processor specific)
+```
+
+By default, when building a library using Cargo, debug information (`.debug_*`) is included
+only when using the debug profile, and the symbol names (`.symtab` and `.strtab`) are always
+preserved. [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) offer options
+named `debug` and `strip` to customize this behavior.
+
+```toml
+[package]
+...
+
+[profile.release]
+debug = 0
+strip = "symbols"
+```
+
+On the other hand, when the Android Gradle plugin packages build results into an `.aar` or a `.aab`
+file, debug information and symbol names are stripped by default. To preserve it, you can add the
+Rust library to the `keepDebugSymbols` property inside the `android { packaging { jniLibs {} } }`
+block.
+
+```kotlin
+android {
+    packaging {
+        jniLibs.keepDebugSymbols += "**/*.so"
+    }
+}
+```
+
+Both Cargo and the AGP uses the `llvm-strip` command in the NDK to strip debug information and
+symbol names. Specifically,
+Cargo [uses](https://github.com/rust-lang/rust/blob/17067e9ac6d7ecb70e50f92c1944e545188d2359/compiler/rustc_codegen_ssa/src/back/linker.rs#L736-L748)
+`llvm-strip --strip-all` when `strip = "symbols"`, while
+AGP [uses](https://cs.android.com/android-studio/platform/tools/base/+/refs/tags/studio-2024.3.2:build-system/gradle-core/src/main/java/com/android/build/gradle/internal/tasks/StripDebugSymbolsTask.kt;l=256)
+`llvm-strip --strip-unneeded`.
+
+### Debug information are automatically extracted from libraries when packaging `.aab`
+
+> :bulb: To learn more about `.aab` files, please refer
+> to [the official documentation](https://developer.android.com/guide/app-bundle/app-bundle-format).
+
+When you build an Android app, the resulting output file is either an `.apk` or an `.aab` file.
+The `.apk` file is used when you hit the run button inside Android Studio, which then can be
+installed on a virtual or a physical Android device via `adb`. The `.aab` file is used when
+uploading the app to Google Play.
+
+However, some services like Google Play or Firebase Crashlytics still require symbol names to
+deobfuscate stacktraces, as mentioned earlier. `.aab` provides a dedicated directory for this
+purpose. For instance, if you include `libyour_project.so` in your library, AGP will generate
+`BUNDLE-METADATA/com.android.tools.build.debugsymbols/<ABI name>/libyour_project.so.sym` inside the
+`.aab`. This `.sym` file is actually a shared object file that retains symbol information for
+`ndk-stack`, which is
+created [with](https://cs.android.com/android-studio/platform/tools/base/+/refs/tags/studio-2024.3.2:build-system/gradle-core/src/main/java/com/android/build/gradle/internal/tasks/ExtractNativeDebugMetadataTask.kt;l=257)
+`llvm-objcopy --strip-debug`.
+
+You can also include the full debug information within the `.aab` file. To achieve this, modify the
+value of the `ndk.debugSymbolLevel` property to `"FULL"` inside the `android { buildTypes { } }` as
+follows. In this case, the generated metadata file is located at
+`BUNDLE-METADATA/com.android.tools.build.debugsymbols/<ABI name>/libyour_project.so.dbg`.
+
+```kotlin
+android {
+    buildTypes {
+        release {
+            ndk.debugSymbolLevel = "FULL"
+        }
+    }
+}
+```
+
+If a `.so` file matches the glob pattern specified in the `keepDebugSymbols` property, the `.so`
+file is included as-is in the `<base or feature>/lib/<ABI name>/libyour_project.so` directory
+within the `.aab` file. Unlike `.aab` files, the `.apk` format does not have a dedicated metadata
+directory for this purpose. By default, even in debug builds, the `.apk` file contains stripped
+`.so` files. Therefore, to debug a Rust function at runtime, you have to make sure the pattern
+assigned to `keepDebugSymbols` matches the `.so` file you want to debug.
+
+> :exclamation: If `llvm-strip` is not properly installed on your computer, you might encounter a
+> message like: `Unable to strip the following libraries, packaging them as they are: ...` during
+> stripping shared objects using the AGP. If this error occurs, verify that it is properly
+> installed. For NDK version 25 or higher, it should be located at
+`<ndk version>/toolchains/llvm/prebuilt/<host triplet>/bin/llvm-strip`.
+
+### Native Android libraries in `.aar` should contain debug information
+
+> :bulb: To learn more about `.aar` files, please refer
+> to [the official documentation](https://developer.android.com/studio/projects/android-library).
+
+When you make an Android Java/Kotlin library, you can publish the library as a `.jar` file or an
+`.aar` file. A typical `.jar` file contains `.class` files compiled from a Java or a Kotlin source
+code, some Java resources, and minor metadata files. On the other hand, an `.aar` file can provide
+more Android-specific files, such as locale-sensitive resources accessible by the Android resource
+API or the `AndroidManifest.xml` file that declares the permissions needed by the app consuming the
+library.
+
+While it is technically possible to put native shared objects inside the Java resource directory
+and load them during the runtime, it is recommended to place them in the designated NDK library
+supported by `.aar`. Since native shared objects are not portable across different CPU
+architectures, you have to provide a different shared object file for each ABI, which is one of the
+built-in features of `.aar`. The Gobley Cargo plugin automatically handles this process.
+
+The published `.aar` file can then be used as a dependency by other app projects. When the consumer
+app project is packaged into its own `.aab` file, the files from the `.aar` dependency are first
+extracted and then re-packaged into the final output. For this reason, `.so` files in `.aar` should
+retain their symbol names. In addition, if you choose to keep the debug information (by modifying
+`debug` in Cargo and `keepDebugSymbols` in Gradle), you can even debug Rust functions at runtime.
+The symbols and the debug information can be stripped when the consuming app itself is built.
+
+```toml
+[profile.release]
+debug = 2
+```
+
+```kotlin
+android {
+    // Don't strip .so files
+    packaging {
+        jniLibs.keepDebugSymbols += "**/*.so"
+    }
+    // Keep the debug information
+    buildTypes {
+        release {
+            ndk.debugSymbolLevel = "FULL"
+        }
+    }
+}
+```
+
+However, if your library is closed-source and you need to protect its internal details, you can
+strip the symbols using Cargo or Gradle, as mentioned earlier.
+
+## Use Link-Time Optimization (LTO) to reduce the size of the binary
+
+One common misconception about Rust is that its final binary sizes are inherently too large for
+practical use. While it's true that debug builds can be substantial, this is often due to the
+inclusion of the pre-built Rust standard library distributed via `rustup`, which can range from 50MB
+to 100MB. However, both Cargo and Kotlin/Native support Link-Time Optimization (LTO), to reduce the
+size of the binary. LTO analyzes the binary and prunes unused functions and global variables,
+significantly reducing the size of the binary. To enable LTO on the Cargo side, you can set
+`lto = true` using [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.html).
+
+```toml
+[profile.release]
+lto = true
+```
+
+On the other hand, Kotlin/Native enables LTO by default for release builds, so no additional
+configuration is required.
+
+The following results are from an experiment using
+the [Kotlin/Native tutorial](../tutorial/3-tutorial-native.md). As you can see, LTO significantly
+reduces the size of the compiled programs.
+
+<div class="text--center img--half">
+    ![LTO experiment results](./4-cross-compilation-tips/img-3.png)
+</div>
 
 ## Building for Windows on ARM
 
