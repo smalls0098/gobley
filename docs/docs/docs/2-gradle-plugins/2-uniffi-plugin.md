@@ -62,3 +62,25 @@ When you use Kotlin targets not supported by the UniFFI plugin like `js()`, `was
 successfully for all platforms. However, all generated functions except for `RustObject(NoPointer)`
 constructors will throw `kotlin.NotImplementedError`. We are trying to support as many platforms as
 possible. If you need to target WASM/JS, please use these stubs until WASM/JS support is released.
+
+## Configuring Bindgen settings using Gradle DSL
+
+Instead of making `<manifest dir>/uniffi.toml`, you can change the bindgen settings directly inside
+the `generateFromLibrary {}` block or the `generateFromUdl {}` block using Gradle DSL.
+
+```kotlin
+uniffi {
+    generateFromLibrary {
+        packageName = "com.example.foo"
+        customType("Uuid") {
+            typeName = "java.util.UUID"
+            intoCustom = "java.util.UUID.fromString({})"
+            fromCustom = "{}.toString()"
+        }
+        usePascalCaseEnumClass = true
+    }
+}
+```
+
+For details about each bindgen setting properties,
+see [Bindgen configuration](../3-bindgen.md#bindgen-configuration).

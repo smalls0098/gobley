@@ -1,6 +1,10 @@
+import fs from "node:fs";
+import path from "node:path";
 import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
+import type { PluginOptions } from "docusaurus-plugin-llms-builder";
+import packageJson from "./package.json";
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -30,6 +34,33 @@ const config: Config = {
     defaultLocale: "en",
     locales: ["en"],
   },
+
+  plugins: [
+    [
+      "docusaurus-plugin-llms-builder",
+      {
+        version: packageJson.version,
+        llmConfigs: [
+          {
+            title: "Gobley",
+            description: "Embed Rust into your Kotlin Multiplatform project",
+            summary: fs.readFileSync(path.join(__dirname, "..", "README.md"), {
+              encoding: "utf-8",
+            }),
+            sessions: [
+              {
+                type: "docs",
+                docsDir: "docs",
+                sessionName: "Docs",
+              },
+            ],
+            generateLLMsTxt: true,
+            generateLLMsFullTxt: true,
+          },
+        ],
+      } as PluginOptions,
+    ],
+  ],
 
   presets: [
     [
@@ -78,9 +109,9 @@ const config: Config = {
           dropdownActiveClassDisabled: true,
         },
         {
-          href: "https://github.com/gobley/gobley",
-          label: "GitHub",
+          type: "custom-githubStargazersCountButton",
           position: "right",
+          repository: "gobley/gobley",
         },
       ],
     },

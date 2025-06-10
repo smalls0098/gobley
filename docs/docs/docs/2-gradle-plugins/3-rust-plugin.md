@@ -4,6 +4,8 @@ slug: /gradle-plugins/rust
 
 # The Rust plugin
 
+## Configuring the Rust toolchain and the linker to use
+
 The Rust plugin is for configuring the Rust toolchain you want to use or linking your Rust library
 to your Kotlin project. By default, the plugins think `cargo` and `rustup` are installed in
 `~/.cargo/bin` or a directory registered in the `PATH` environment variable, which is okay for
@@ -60,4 +62,23 @@ kotlin {
 import gobley.gradle.rust.dsl.*
 
 println(rustVersion.get()) // e.g. 1.81.0
+```
+
+## Use the Rust plugin to configure multi-project builds properly
+
+To align with modern
+Gradle's [isolated project](https://docs.gradle.org/8.13/userguide/isolated_projects.html)
+feature, Gobley
+uses [Gradle configurations](https://docs.gradle.org/8.13/userguide/declaring_configurations.html)
+to propagate dynamic libraries built with Cargo for JVM targets and UniFFI configurations
+for [external types](https://mozilla.github.io/uniffi-rs/0.28/udl/ext_types.html). When a project
+that uses the Cargo or the UniFFI plugins references or referenced by another project, the Rust
+plugin should be also applied to that project. If you don't apply the Rust plugin, you might
+encounter a runtime error during Android local unit tests, or a configuration not found error
+during IDE sync. Simply apply the Rust plugin to resolve these issues.
+
+```kotlin
+plugins {
+    id("dev.gobley.rust") version "0.2.0"
+}
 ```
